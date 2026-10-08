@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { capture } from "../analytics";
+import { loadNodes, newNodeId, saveNodes, upsertNode } from "../nodes";
 import type { DaemonApi } from "../protocol/api";
 import type { Endpoint } from "../protocol/connection";
 import { loadSetupComplete, markSetupComplete, saveDeviceToken } from "../settings";
@@ -44,6 +45,13 @@ export function useFirstRunSetup(
       capture("setup_method_selected", { method: connection.method });
       if (connection.method === "remote" && connection.token !== undefined) {
         saveDeviceToken(connection.token);
+        const node = {
+          id: newNodeId(),
+          name: connection.endpoint.host,
+          ...connection.endpoint,
+          token: connection.token,
+        };
+        saveNodes(upsertNode(loadNodes(), node));
       }
       changeEndpoint(connection.endpoint);
     },

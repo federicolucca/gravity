@@ -5,6 +5,7 @@ import { useManagedLocalDaemon } from "../../hooks/useManagedLocalDaemon";
 import type { ConnectionStatus, Endpoint } from "../../protocol/connection";
 import type { NotifyLevel } from "../../protocol/entities";
 import DaemonSettings from "./DaemonSettings";
+import NodeSettings from "./NodeSettings";
 
 const STATUS_LABEL: Readonly<Record<ConnectionStatus, string>> = {
   connected: "Connected",
@@ -38,7 +39,16 @@ export default function ConnectionSettings(props: ConnectionSettingsProps): Reac
   const { client, status, endpoint, connected, canControl, onChangeEndpoint, onToast } = props;
   const [host, setHost] = useState(endpoint.host);
   const [port, setPort] = useState(String(endpoint.port));
+  const [shownEndpoint, setShownEndpoint] = useState(endpoint);
   const managedDaemon = useManagedLocalDaemon(endpoint);
+
+  // Switching nodes moves the endpoint from outside this form; reset the draft
+  // during render rather than in an effect.
+  if (shownEndpoint !== endpoint) {
+    setShownEndpoint(endpoint);
+    setHost(endpoint.host);
+    setPort(String(endpoint.port));
+  }
 
   const draft = parseEndpoint(host, port);
   const dirty = draft === null || draft.host !== endpoint.host || draft.port !== endpoint.port;
@@ -58,6 +68,8 @@ export default function ConnectionSettings(props: ConnectionSettingsProps): Reac
         </div>
         <span className={`conn-dot conn-${status}`} />
       </div>
+
+      <NodeSettings endpoint={endpoint} onChangeEndpoint={onChangeEndpoint} />
 
       <form
         className="settings-row settings-row-form"

@@ -213,3 +213,15 @@
 .settings-shortcut-recording {
   color: var(--text-dim);
 }
+
+/* ---------- saved nodes ---------- */
+
+.nodes-table {
+  margin-bottom: 8px;
+}
+
+.nodes-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
