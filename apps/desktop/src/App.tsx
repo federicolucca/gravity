@@ -4,6 +4,7 @@ import type { ReactElement } from "react";
 import { useDaemonActions } from "./app/useDaemonActions";
 import { useFirstRunSetup } from "./app/useFirstRunSetup";
 import { useGroups } from "./app/useGroups";
+import { useGroupActivity } from "./components/sidebar/useGroupActivity";
 import { ProfileContext } from "./app/profile";
 import { useOwnerProfile } from "./app/useOwnerProfile";
 import type { FirstRunSetup } from "./app/useFirstRunSetup";
@@ -98,6 +99,13 @@ export default function App(): ReactElement {
   const { select, bots, canControl, connected } = daemon;
   const actionByBot = useBotActions(client, bots);
   const groups = useGroups(client, connected, bots, select, addToast);
+  const groupActivity = useGroupActivity(
+    client,
+    groups.groups,
+    bots,
+    daemon.activityByBot,
+    daemon.selection.kind === "group" ? daemon.selection.groupId : null,
+  );
   const profile = useOwnerProfile(client, connected);
   const [machineOpen, setMachineOpen] = useState(false);
   const openMachine = useCallback((): void => {
@@ -166,6 +174,7 @@ export default function App(): ReactElement {
             activityByBot={daemon.activityByBot}
             actionByBot={actionByBot}
             groups={groups.groups}
+            groupActivity={groupActivity}
             onNewGroup={groups.openNew}
             onOpenMachine={openMachine}
             pendingDecisions={pending}

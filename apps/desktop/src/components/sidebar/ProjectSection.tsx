@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { byRecency } from "./recency";
+import { byRecency, withGroups } from "./recency";
 import type { ReactElement } from "react";
 import type { Bot, Project } from "../../protocol/entities";
 import BotRow from "./BotRow";
@@ -44,9 +44,14 @@ export default function ProjectSection(props: ProjectSectionProps): ReactElement
   const pinnedBots = pinnedBotIds
     .map((id) => bots.find((bot) => bot.id === id))
     .filter((bot): bot is Bot => bot !== undefined);
-  const unpinnedBots = byRecency(
-    bots.filter((bot) => !pinnedBotIds.includes(bot.id)),
+  const rows = withGroups(
+    byRecency(
+      bots.filter((bot) => !pinnedBotIds.includes(bot.id)),
+      props.activityByBot,
+    ),
+    props.groups.filter((group) => group.project_id === project.id),
     props.activityByBot,
+    props.groupActivity ?? {},
   );
   const selectedBotId = selection.kind === "bot" ? selection.botId : null;
 
@@ -99,41 +104,41 @@ export default function ProjectSection(props: ProjectSectionProps): ReactElement
             onTogglePin={props.onTogglePin}
           />
 
-          {unpinnedBots.map((bot) => (
-            <BotRow
-              key={bot.id}
-              bot={bot}
-              unread={props.unreadBots[bot.id] ?? 0}
-              failed={props.failedByBot.get(bot.id) ?? 0}
-              next={props.nextRun[bot.id]}
-              activity={props.activityByBot[bot.id]}
-              action={props.actionByBot[bot.id]}
-              selected={selectedBotId === bot.id}
-              canControl={canControl}
-              onClick={() => {
-                onSelect({ kind: "bot", botId: bot.id });
-              }}
-              onDelete={() => {
-                void props.onDeleteBot(bot.id);
-              }}
-              onTogglePin={() => {
-                props.onTogglePin(bot.id);
-              }}
-            />
-          ))}
-          {props.groups
-            .filter((group) => group.project_id === project.id)
-            .map((group) => (
-              <GroupRow
-                key={group.id}
-                group={group}
-                members={bots.filter((bot) => group.bot_ids.includes(bot.id))}
-                selected={selection.kind === "group" && selection.groupId === group.id}
+          {rows.map((row) =>
+            row.kind === "bot" ? (
+              <BotRow
+                key={row.bot.id}
+                bot={row.bot}
+                unread={props.unreadBots[row.bot.id] ?? 0}
+                failed={props.failedByBot.get(row.bot.id) ?? 0}
+                next={props.nextRun[row.bot.id]}
+                activity={props.activityByBot[row.bot.id]}
+                action={props.actionByBot[row.bot.id]}
+                selected={selectedBotId === row.bot.id}
+                canControl={canControl}
                 onClick={() => {
-                  onSelect({ kind: "group", groupId: group.id });
+                  onSelect({ kind: "bot", botId: row.bot.id });
+                }}
+                onDelete={() => {
+                  void props.onDeleteBot(row.bot.id);
+                }}
+                onTogglePin={() => {
+                  props.onTogglePin(row.bot.id);
                 }}
               />
-            ))}
+            ) : (
+              <GroupRow
+                key={row.group.id}
+                group={row.group}
+                members={bots.filter((bot) => row.group.bot_ids.includes(bot.id))}
+                activity={props.groupActivity?.[row.group.id]}
+                selected={selection.kind === "group" && selection.groupId === row.group.id}
+                onClick={() => {
+                  onSelect({ kind: "group", groupId: row.group.id });
+                }}
+              />
+            ),
+          )}
           {bots.length === 0 ? <div className="muted project-empty">No bots yet.</div> : null}
         </>
       )}

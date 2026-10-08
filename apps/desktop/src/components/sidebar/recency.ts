@@ -1,4 +1,5 @@
-import type { Bot, BotActivity, BotState } from "../../protocol/entities";
+import type { Bot, BotActivity, BotGroup, BotState } from "../../protocol/entities";
+import type { GroupActivity } from "./groupActivity";
 
 /** States that put a bot at the top: it is working or waiting on the owner. */
 const LIVE: ReadonlySet<BotState> = new Set<BotState>([
@@ -25,4 +26,36 @@ export function byRecency(
       at(b) - at(a) ||
       a.name.localeCompare(b.name),
   );
+}
+
+function stampOf(at: string | undefined): number {
+  return at === undefined ? 0 : Date.parse(at);
+}
+
+export type SidebarRow =
+  | { readonly kind: "bot"; readonly bot: Bot }
+  | { readonly kind: "group"; readonly group: BotGroup };
+
+/**
+ * Groups slotted among the already ordered bots by their newest message: a
+ * group goes before the first idle bot that is older than it; live bots stay on top.
+ */
+export function withGroups(
+  ordered: readonly Bot[],
+  groups: readonly BotGroup[],
+  activity: Readonly<Record<string, BotActivity>>,
+  groupActivity: Readonly<Record<string, GroupActivity>>,
+): readonly SidebarRow[] {
+  const pending = groups.toSorted(
+    (a, b) => stampOf(groupActivity[b.id]?.at) - stampOf(groupActivity[a.id]?.at),
+  );
+  const rows: SidebarRow[] = [];
+  for (const bot of ordered) {
+    const botAt = LIVE.has(bot.state) ? Number.POSITIVE_INFINITY : stampOf(activity[bot.id]?.at);
+    while (pending.length > 0 && stampOf(groupActivity[pending[0].id]?.at) > botAt) {
+      rows.push({ kind: "group", group: pending.shift() as BotGroup });
+    }
+    rows.push({ kind: "bot", bot });
+  }
+  return [...rows, ...pending.map((group): SidebarRow => ({ kind: "group", group }))];
 }

@@ -1,5 +1,6 @@
 import type { Selection } from "../../app/selection";
 import type { BotActivity, BotGroup } from "../../protocol/entities";
+import type { GroupActivity } from "./groupActivity";
 
 /** Per-row badge inputs shared by the sidebar and each project section. */
 export interface SidebarTreeProps {
@@ -13,6 +14,8 @@ export interface SidebarTreeProps {
   readonly actionByBot: Readonly<Record<string, string>>;
   /** Group chats of every project; each section shows its own. */
   readonly groups: readonly BotGroup[];
+  /** Newest message and unread replies per group, keyed by group id. */
+  readonly groupActivity?: Readonly<Record<string, GroupActivity>>;
   readonly onNewGroup: (projectId: string) => void;
   /** Opens the live stats of the daemon's machine. */
   readonly onOpenMachine: () => void;

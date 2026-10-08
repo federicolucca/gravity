@@ -106,6 +106,7 @@ export default function Sidebar(props: SidebarProps): ReactElement {
             activityByBot={props.activityByBot}
             actionByBot={props.actionByBot}
             groups={props.groups}
+            groupActivity={props.groupActivity}
             onNewGroup={props.onNewGroup}
             onOpenMachine={props.onOpenMachine}
             selection={selection}
