@@ -1,0 +1,86 @@
+name: windows-installer
+
+# Builds the unsigned Windows x64 NSIS installer from this fork's
+# `windows-app` branch and publishes it as a prerelease, so the desktop app
+# can be installed before upstream ships a Windows release. Mirrors the
+# `windows` job of release.yml without updater signing or telemetry.
+
+on:
+  push:
+    branches: [windows-app]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: windows-installer-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    name: Windows (x64)
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: apps/desktop/pnpm-lock.yaml
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Resolve version
+        shell: bash
+        run: |
+          version="$(jq -r .version apps/desktop/src-tauri/tauri.conf.json)"
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          echo "TAG=windows-v$version-${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+
+      - name: Stage gravityd sidecar
+        run: ./scripts/prepare-sidecar.ps1
+
+      - name: Install desktop dependencies
+        working-directory: apps/desktop
+        run: pnpm install --frozen-lockfile
+
+      - name: Build desktop app
+        working-directory: apps/desktop
+        shell: bash
+        env:
+          VITE_APP_VERSION: ${{ env.VERSION }}
+        run: pnpm tauri build --bundles nsis
+
+      - name: Check installer lifecycle
+        run: ./scripts/test-windows-installer.ps1 -Installer (Get-ChildItem apps/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe).FullName
+
+      - name: Collect installer
+        shell: bash
+        run: |
+          mkdir -p dist
+          mv apps/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe \
+            "dist/gravity-desktop-$VERSION-x64-setup.exe"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: dist/*
+          if-no-files-found: error
+
+      - name: Publish prerelease
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$TAG" dist/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "Gravity $VERSION Windows (${GITHUB_SHA::7})" \
+            --prerelease \
+            --notes "Unsigned Windows x64 installer built from \`windows-app\` at ${GITHUB_SHA}. SmartScreen warns on first run: choose **More info**, then **Run anyway**."
