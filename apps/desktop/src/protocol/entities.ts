@@ -85,7 +85,9 @@ export interface OwnerProfile {
   };
   /** Empty means "use the Claude display name". */
   readonly display_name: string;
-  /** `icon:<name>`, or empty for initials. */
+  /** Gravatar for the Claude email (404s when the owner has none). */
+  readonly gravatar_url?: string | null;
+  /** `icon:<name>`, `initials`, or empty for Gravatar falling back to initials. */
   readonly avatar: string;
 }
 

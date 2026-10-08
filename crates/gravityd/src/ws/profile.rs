@@ -6,6 +6,7 @@
 use std::path::{Path, PathBuf};
 
 use serde_json::{json, Map, Value};
+use sha2::{Digest, Sha256};
 
 use super::Conn;
 
@@ -57,13 +58,23 @@ fn claude_account(user_home: &Path) -> Value {
     Value::Object(out)
 }
 
+/// Gravatar's address for an email (SHA-256 of the trimmed, lowercased
+/// address); `d=404` makes a missing Gravatar fail so the client falls back.
+fn gravatar_url(email: &str) -> String {
+    let hash = Sha256::digest(email.trim().to_lowercase().as_bytes());
+    format!("https://gravatar.com/avatar/{hash:x}?s=160&d=404")
+}
+
 impl Conn {
     /// `get_profile {}` → `{claude, display_name, avatar}`.
     pub(super) fn get_profile(&self, req_id: &Value, _req: &Value) -> anyhow::Result<()> {
         let own = read_json(&profile_path(&self.app.cfg.home));
+        let claude = claude_account(&self.app.cfg.user_home);
+        let gravatar = claude["emailAddress"].as_str().map(gravatar_url);
         self.send(json!({
             "type": "profile", "req_id": req_id,
-            "claude": claude_account(&self.app.cfg.user_home),
+            "claude": claude,
+            "gravatar_url": gravatar,
             "display_name": own["display_name"].as_str().unwrap_or(""),
             "avatar": own["avatar"].as_str().unwrap_or(""),
         }));
@@ -83,7 +94,7 @@ impl Conn {
         );
         let avatar = req.get("avatar").and_then(Value::as_str).unwrap_or("");
         anyhow::ensure!(
-            avatar.is_empty() || bus::avatar::parse(avatar).is_ok(),
+            avatar.is_empty() || avatar == "initials" || bus::avatar::parse(avatar).is_ok(),
             "unknown avatar"
         );
         crate::paths::atomic_write_json(
@@ -97,6 +108,14 @@ impl Conn {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn gravatar_hashes_the_normalized_email() {
+        assert_eq!(
+            gravatar_url(" MyEmailAddress@example.com "),
+            "https://gravatar.com/avatar/84059b07d4be67b806386c0aad8070a23f18836bbaae342275dc0a83414c32ee?s=160&d=404"
+        );
+    }
 
     #[test]
     fn only_account_fields_leave_the_claude_config() {

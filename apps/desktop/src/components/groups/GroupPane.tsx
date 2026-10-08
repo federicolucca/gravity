@@ -7,6 +7,8 @@ import ChatComposer from "../chat/ChatComposer";
 import ChatItemView from "../chat/ChatItemView";
 import { dayLabel, needsTimeGap } from "../chat/chatTime";
 import { downloadFile } from "../chat/downloads";
+import { unlanded } from "../chat/pending";
+import type { PendingPrompt } from "../chat/pending";
 import { sendPrompt } from "../chat/send";
 import { promptWithAttachments, uploadFile } from "../chat/uploads";
 import { groupPrompt, mergeThreads, recipientsFor } from "./groupChat";
@@ -36,7 +38,7 @@ export default function GroupPane({
   canControl,
 }: GroupPaneProps): ReactElement {
   const [thread, setThread] = useState<readonly GroupItem[] | null>(null);
-  const [pending, setPending] = useState<GroupItem | null>(null);
+  const [pending, setPending] = useState<readonly PendingPrompt[]>([]);
   const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const pinnedRef = useRef(true);
@@ -93,14 +95,21 @@ export default function GroupPane({
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [client, group, memberKey, anyWorking]);
 
-  const landed =
-    pending !== null &&
-    (thread ?? []).some((entry) => entry.bot === undefined && entry.item.at >= pending.item.at);
-  const shown = pending === null || landed ? thread : [...(thread ?? []), pending];
+  const ownerItems = (thread ?? []).filter((entry) => entry.bot === undefined).map((e) => e.item);
+  const waiting = unlanded(pending, ownerItems);
+  const shown =
+    waiting.length === 0
+      ? thread
+      : [
+          ...(thread ?? []),
+          ...waiting.map((prompt): GroupItem => ({
+            item: { kind: "user", at: prompt.at, text: prompt.text },
+          })),
+        ];
 
   useEffect(() => {
     const el = scrollRef.current;
-    if ((thread !== null || pending !== null) && el !== null && pinnedRef.current) {
+    if ((thread !== null || pending.length > 0) && el !== null && pinnedRef.current) {
       el.scrollTop = el.scrollHeight;
     }
   }, [thread, pending]);
@@ -124,13 +133,11 @@ export default function GroupPane({
       throw failure;
     }
     pinnedRef.current = true;
-    setPending({
-      item: {
-        kind: "user",
-        at: new Date(Date.now() - 5000).toISOString(),
-        text: promptWithAttachments(text, uploads[0] ?? []),
-      },
-    });
+    const sent = {
+      at: new Date(Date.now() - 5000).toISOString(),
+      text: promptWithAttachments(text, uploads[0] ?? []),
+    };
+    setPending((prev) => [...unlanded(prev, ownerItems), sent]);
     live.forEach((bot, index) => {
       const body = promptWithAttachments(text, uploads[index] ?? []);
       sendPrompt(client, bot.id, groupPrompt(group, members, live, body));

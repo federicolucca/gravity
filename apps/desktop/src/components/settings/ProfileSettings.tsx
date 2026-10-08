@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { ReactElement } from "react";
 import { ownerName, useProfile } from "../../app/profile";
 import type { OwnerProfile } from "../../protocol/entities";
-import BotAvatar from "../BotAvatar";
+import OwnerAvatar from "../OwnerAvatar";
 import { BOT_TILES } from "../botTiles";
 
 function date(value: string | undefined): string | undefined {
@@ -41,6 +41,13 @@ function Row({
   );
 }
 
+function choiceLabel(value: string): string {
+  if (value === "") {
+    return "Gravatar";
+  }
+  return value === "initials" ? "Initials" : value.slice("icon:".length);
+}
+
 function Editor({ profile }: { readonly profile: OwnerProfile }): ReactElement {
   const { save } = useProfile();
   const [name, setName] = useState(profile.display_name);
@@ -58,7 +65,11 @@ function Editor({ profile }: { readonly profile: OwnerProfile }): ReactElement {
     }
   };
 
-  const choices = ["", ...Object.keys(BOT_TILES).map((icon) => `icon:${icon}`)];
+  const choices = [
+    ...(profile.gravatar_url ? [""] : []),
+    "initials",
+    ...Object.keys(BOT_TILES).map((icon) => `icon:${icon}`),
+  ];
   return (
     <form
       className="settings-section"
@@ -86,20 +97,21 @@ function Editor({ profile }: { readonly profile: OwnerProfile }): ReactElement {
         <div className="avatar-picker" role="radiogroup" aria-labelledby="profile-avatar-label">
           {choices.map((value) => (
             <button
-              key={value || "initials"}
+              key={value || "gravatar"}
               type="button"
               role="radio"
               aria-checked={avatar === value}
-              aria-label={value === "" ? "Initials" : value.slice(5)}
+              aria-label={choiceLabel(value)}
+              title={choiceLabel(value)}
               className={`avatar-choice${avatar === value ? " avatar-choice-on" : ""}`}
               onClick={() => {
                 setAvatar(value);
               }}
             >
-              <BotAvatar
+              <OwnerAvatar
+                profile={profile}
                 avatar={value}
                 name={name.trim() || ownerName(profile)}
-                id="owner"
                 size="lg"
               />
             </button>
@@ -134,7 +146,7 @@ export default function ProfileSettings(): ReactElement {
   return (
     <>
       <div className="profile-card">
-        <BotAvatar avatar={profile.avatar} name={ownerName(profile)} id="owner" size="lg" />
+        <OwnerAvatar profile={profile} size="lg" />
         <div>
           <h2>{ownerName(profile)}</h2>
           {claude.emailAddress === undefined ? null : <p>{claude.emailAddress}</p>}

@@ -2,8 +2,9 @@ import { ArrowDownLeft, ArrowUpRight, ChevronRight, Paperclip, User } from "luci
 import { useState } from "react";
 import type { ReactElement } from "react";
 import type { Bot, ChatItem } from "../../protocol/entities";
-import { ownerName, useProfile } from "../../app/profile";
+import { useProfile } from "../../app/profile";
 import BotAvatar from "../BotAvatar";
+import OwnerAvatar from "../OwnerAvatar";
 import Markdown from "../control/Markdown";
 import FileDownloads from "./FileDownloads";
 import Reaction from "./Reaction";
@@ -84,14 +85,14 @@ function BusNote({ item }: { readonly item: ChatItem }): ReactElement {
 }
 
 /** The owner's small avatar: their Gravity pick, else their initial, else a person icon. */
-function OwnerAvatar(): ReactElement {
+function MeAvatar(): ReactElement {
   const { profile } = useProfile();
   return (
     <span className={`chat-avatar${profile === null ? " chat-avatar-me" : ""}`} aria-hidden="true">
       {profile === null ? (
         <User size={13} strokeWidth={2.25} />
       ) : (
-        <BotAvatar avatar={profile.avatar} name={ownerName(profile)} id="owner" size="sm" />
+        <OwnerAvatar profile={profile} size="sm" />
       )}
     </span>
   );
@@ -115,7 +116,7 @@ function UserMessage({ text }: { readonly text: string }): ReactElement {
         ) : null}
         {body !== "" ? <div className="chat-bubble chat-bubble-user">{body}</div> : null}
       </div>
-      <OwnerAvatar />
+      <MeAvatar />
     </div>
   );
 }

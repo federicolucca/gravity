@@ -6,6 +6,8 @@ import ChatComposer from "./ChatComposer";
 import ChatItemView from "./ChatItemView";
 import { dayLabel, needsTimeGap } from "./chatTime";
 import { downloadFile } from "./downloads";
+import { unlanded } from "./pending";
+import type { PendingPrompt } from "./pending";
 import { sendPrompt } from "./send";
 import { promptWithAttachments, uploadFile } from "./uploads";
 
@@ -33,7 +35,7 @@ export default function ChatPane({ client, bot, canWrite }: ChatPaneProps): Reac
   // Re-reads on demand: after a send, before any push says so.
   const reloadRef = useRef<(() => void) | null>(null);
   // The owner's message, shown until the transcript carries it.
-  const [pending, setPending] = useState<ChatItem | null>(null);
+  const [pending, setPending] = useState<readonly PendingPrompt[]>([]);
 
   useEffect(() => {
     let alive = true;
@@ -77,15 +79,23 @@ export default function ChatPane({ client, bot, canWrite }: ChatPaneProps): Reac
     };
   }, [client, botId, working]);
 
-  // Any owner prompt newer than the pending one means the transcript caught up.
-  const landed =
-    pending !== null && (items ?? []).some((item) => item.kind === "user" && item.at >= pending.at);
-  const shown = pending === null || landed ? items : [...(items ?? []), pending];
+  const waiting = unlanded(pending, items ?? []);
+  const shown =
+    waiting.length === 0
+      ? items
+      : [
+          ...(items ?? []),
+          ...waiting.map((prompt): ChatItem => ({
+            kind: "user",
+            at: prompt.at,
+            text: prompt.text,
+          })),
+        ];
 
   // Follow new items only while the reader sits at the bottom.
   useEffect(() => {
     const el = scrollRef.current;
-    if ((items !== null || pending !== null) && el !== null && pinnedRef.current) {
+    if ((items !== null || pending.length > 0) && el !== null && pinnedRef.current) {
       el.scrollTop = el.scrollHeight;
     }
   }, [items, pending]);
@@ -159,8 +169,8 @@ export default function ChatPane({ client, bot, canWrite }: ChatPaneProps): Reac
     }
     pinnedRef.current = true;
     const prompt = promptWithAttachments(text, paths);
-    // Back-dated a little so a transcript clock a few seconds behind still counts.
-    setPending({ kind: "user", at: new Date(Date.now() - 5000).toISOString(), text: prompt });
+    const sent = { at: new Date(Date.now() - 5000).toISOString(), text: prompt };
+    setPending((prev) => [...unlanded(prev, items ?? []), sent]);
     sendPrompt(client, botId, prompt);
     for (const delay of [1000, 3000]) {
       window.setTimeout(() => {

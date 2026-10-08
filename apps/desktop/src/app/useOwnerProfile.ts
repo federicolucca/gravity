@@ -4,7 +4,12 @@ import type { OwnerProfile } from "../protocol/entities";
 import type { ProfileApi } from "./profile";
 
 function fromReply(reply: OwnerProfile): OwnerProfile {
-  return { claude: reply.claude, display_name: reply.display_name, avatar: reply.avatar };
+  return {
+    claude: reply.claude,
+    gravatar_url: reply.gravatar_url,
+    display_name: reply.display_name,
+    avatar: reply.avatar,
+  };
 }
 
 /** Loads the owner's profile on connect; `save` stores Gravity's own name and avatar. */

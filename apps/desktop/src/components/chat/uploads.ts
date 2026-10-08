@@ -34,7 +34,9 @@ export async function uploadFile(client: DaemonApi, botId: string, file: File): 
 
 /** The prompt sent for a message plus its uploaded files. */
 export function promptWithAttachments(text: string, paths: readonly string[]): string {
-  const lines = paths.map((path) => `${ATTACHED_PREFIX}${path}`);
+  // Backticks keep Claude Code from swallowing an image path into an
+  // "[Image #N]" paste, which would drop the path from the transcript.
+  const lines = paths.map((path) => `${ATTACHED_PREFIX}\`${path}\``);
   return [text, ...lines].filter((part) => part !== "").join("\n");
 }
 
@@ -46,8 +48,12 @@ export function splitAttachments(text: string): {
   const files: string[] = [];
   const kept: string[] = [];
   for (const line of text.split("\n")) {
+    if (line.trim() === ATTACHED_PREFIX.trim()) {
+      // An older image prompt whose path Claude Code turned into "[Image #N]".
+      continue;
+    }
     if (line.startsWith(ATTACHED_PREFIX)) {
-      files.push(line.slice(ATTACHED_PREFIX.length).trim());
+      files.push(line.slice(ATTACHED_PREFIX.length).trim().replaceAll("`", ""));
     } else {
       kept.push(line);
     }
