@@ -44,7 +44,9 @@ impl Conn {
                         .ok_or_else(|| anyhow::anyhow!("task not found"))?;
                     task.title = title;
                     task.body = body;
-                    task.model = model;
+                    if req.get("model").is_some() {
+                        task.model = model;
+                    }
                 }
                 None => boards.tasks.push(new_task(bot_id, title, body, model)),
             }

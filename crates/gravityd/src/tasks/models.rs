@@ -106,7 +106,9 @@ const LIGHT: &[&str] = &[
 
 /// The routing rule for "auto", a transparent heuristic with no API call:
 /// heavy words, attachments or a long brief go to Opus; a short brief made of
-/// light words goes to Haiku; everything else is normal work for Sonnet.
+/// light words goes to Haiku; everything else is normal work for Sonnet. A
+/// chat message that is neither stays on the bot's current model, so ordinary
+/// conversation never pays for a restart.
 fn auto_choice(task: &Task) -> Option<&'static str> {
     let text = format!("{}\n{}", task.title, task.body).to_lowercase();
     let has = |words: &[&str]| words.iter().any(|w| text.contains(w));
@@ -116,6 +118,8 @@ fn auto_choice(task: &Task) -> Option<&'static str> {
         Some("opus")
     } else if has(LIGHT) && len <= 300 {
         Some("haiku")
+    } else if task.chat {
+        None
     } else {
         Some("sonnet")
     }
@@ -252,6 +256,10 @@ mod tests {
     fn auto_routes_by_weight_and_an_explicit_choice_wins() {
         let route = |title: &str, body: &str| auto_choice(&sample(title, body));
         assert_eq!(route("Check the disk status", ""), Some("haiku"));
+        let chat = |text: &str| auto_choice(&super::super::chat_task("b", text, None));
+        assert_eq!(chat("ok, thanks"), None);
+        assert_eq!(chat("controlla lo stato del deploy"), Some("haiku"));
+        assert_eq!(chat("implementa il login"), Some("opus"));
         assert_eq!(route("Riassumi le mail di oggi", ""), Some("haiku"));
         assert_eq!(route("Controlla se il deploy è finito", ""), Some("haiku"));
         assert_eq!(

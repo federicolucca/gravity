@@ -1,29 +1,21 @@
 import { useState } from "react";
 import type { KeyboardEvent, ReactElement } from "react";
-import type { TaskDraft, TaskModel } from "../../protocol/entities";
+import type { TaskDraft } from "../../protocol/entities";
 
-const MODELS: readonly { readonly value: TaskModel; readonly label: string }[] = [
-  { value: "auto", label: "Auto model" },
-  { value: "opus", label: "Opus" },
-  { value: "sonnet", label: "Sonnet" },
-  { value: "haiku", label: "Haiku" },
-];
-
-/** Title, description and model for a new or edited task. */
+/** Title and description for a new or edited task; Gravity picks the model. */
 export default function TaskForm({
   initial,
   submitLabel,
   onSubmit,
   onCancel,
 }: {
-  readonly initial?: { readonly title: string; readonly body: string; readonly model?: TaskModel };
+  readonly initial?: { readonly title: string; readonly body: string };
   readonly submitLabel: string;
   readonly onSubmit: (draft: TaskDraft) => Promise<void>;
   readonly onCancel: () => void;
 }): ReactElement {
   const [title, setTitle] = useState(initial?.title ?? "");
   const [body, setBody] = useState(initial?.body ?? "");
-  const [model, setModel] = useState<TaskModel>(initial?.model ?? "auto");
   const [busy, setBusy] = useState(false);
   const cancelOnEscape = (event: KeyboardEvent): void => {
     if (event.key === "Escape") {
@@ -40,12 +32,11 @@ export default function TaskForm({
           return;
         }
         setBusy(true);
-        onSubmit({ title: title.trim(), body: body.trim(), model })
+        onSubmit({ title: title.trim(), body: body.trim() })
           .then(() => {
             if (initial === undefined) {
               setTitle("");
               setBody("");
-              setModel("auto");
             }
             return undefined;
           })
@@ -78,21 +69,6 @@ export default function TaskForm({
         }}
       />
       <div className="task-form-actions">
-        <select
-          aria-label="Model"
-          title="Auto picks Haiku, Sonnet or Opus from the task; the bot restarts onto it and back"
-          value={model}
-          onKeyDown={cancelOnEscape}
-          onChange={(event) => {
-            setModel(event.target.value as TaskModel);
-          }}
-        >
-          {MODELS.map((choice) => (
-            <option key={choice.value} value={choice.value}>
-              {choice.label}
-            </option>
-          ))}
-        </select>
         <button type="button" className="btn btn-small" onClick={onCancel}>
           Cancel
         </button>

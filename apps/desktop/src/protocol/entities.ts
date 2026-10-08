@@ -75,7 +75,6 @@ export type TaskModel = "auto" | "opus" | "sonnet" | "haiku";
 export interface TaskDraft {
   readonly title: string;
   readonly body: string;
-  readonly model: TaskModel;
 }
 
 export interface BotTask {

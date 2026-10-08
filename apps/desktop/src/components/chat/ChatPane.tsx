@@ -8,8 +8,6 @@ import { dayLabel, needsTimeGap } from "./chatTime";
 import { downloadFile } from "./downloads";
 import { unlanded } from "./pending";
 import type { PendingPrompt } from "./pending";
-import { sendPrompt } from "./send";
-import type { ChatModel } from "./chatModel";
 import { chatModelNotice } from "./chatModel";
 import { promptWithAttachments, uploadFile } from "./uploads";
 
@@ -160,7 +158,7 @@ export default function ChatPane({ client, bot, canWrite }: ChatPaneProps): Reac
     }
   };
 
-  const send = async (text: string, files: readonly File[], model: ChatModel): Promise<void> => {
+  const send = async (text: string, files: readonly File[]): Promise<void> => {
     setSendError(null);
     let paths: string[];
     try {
@@ -173,19 +171,16 @@ export default function ChatPane({ client, bot, canWrite }: ChatPaneProps): Reac
     const prompt = promptWithAttachments(text, paths);
     const sent = { at: new Date(Date.now() - 5000).toISOString(), text: prompt };
     setPending((prev) => [...unlanded(prev, items ?? []), sent]);
-    if (model === "bot") {
-      sendPrompt(client, botId, prompt);
-    } else {
-      try {
-        const reply = await client.request(
-          { type: "send_chat", bot_id: botId, text: prompt, model },
-          "chat_model",
-        );
-        setSendError(chatModelNotice(reply));
-      } catch (error) {
-        setSendError(`Send failed: ${error instanceof Error ? error.message : String(error)}`);
-        throw error;
-      }
+    // Gravity picks the model: light or heavy messages may restart the bot onto Haiku or Opus.
+    try {
+      const reply = await client.request(
+        { type: "send_chat", bot_id: botId, text: prompt, model: "auto" },
+        "chat_model",
+      );
+      setSendError(chatModelNotice(reply));
+    } catch (error) {
+      setSendError(`Send failed: ${error instanceof Error ? error.message : String(error)}`);
+      throw error;
     }
     for (const delay of [1000, 3000]) {
       window.setTimeout(() => {
@@ -230,7 +225,7 @@ export default function ChatPane({ client, bot, canWrite }: ChatPaneProps): Reac
         </div>
       </div>
       {sendError !== null ? <p className="chat-error">{sendError}</p> : null}
-      <ChatComposer botName={bot.name} disabled={!canWrite} onSend={send} modelPicker />
+      <ChatComposer botName={bot.name} disabled={!canWrite} onSend={send} />
     </div>
   );
 }

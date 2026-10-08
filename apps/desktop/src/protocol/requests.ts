@@ -101,7 +101,6 @@ export type ClientRequestBody =
       readonly task_id?: string;
       readonly title: string;
       readonly body: string;
-      readonly model: TaskModel;
     }
   | {
       readonly type: "send_chat";
