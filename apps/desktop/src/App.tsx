@@ -3,6 +3,7 @@ import type { ReactElement } from "react";
 import { useDaemonActions } from "./app/useDaemonActions";
 import { useFirstRunSetup } from "./app/useFirstRunSetup";
 import type { FirstRunSetup } from "./app/useFirstRunSetup";
+import { useBotActions } from "./app/useBotActions";
 import { useDaemonState } from "./app/useDaemonState";
 import type { DaemonState } from "./app/useDaemonState";
 import { useDesktopShell } from "./app/useDesktopShell";
@@ -90,6 +91,7 @@ export default function App(): ReactElement {
   const daemon = useDaemonState(client, addToast);
   const overlays = useOverlays();
   const { select, bots, canControl, connected } = daemon;
+  const actionByBot = useBotActions(client, bots);
 
   useUpdates(addToast, daemon.status, daemon.endpoint);
 
@@ -147,6 +149,7 @@ export default function App(): ReactElement {
           failedByBot={failedByBot}
           nextRun={daemon.nextRun}
           activityByBot={daemon.activityByBot}
+          actionByBot={actionByBot}
           pendingDecisions={pending}
           selection={daemon.selection}
           canControl={canControl}

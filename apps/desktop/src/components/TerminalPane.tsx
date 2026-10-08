@@ -32,9 +32,15 @@ type LinkHandler = NonNullable<ITerminalOptions["linkHandler"]>;
 const linkFailure: { report: (body: string) => void } = { report: () => {} };
 
 /** The xterm palette, read from the active theme's CSS tokens. */
-function terminalTheme(): { background: string; foreground: string; cursor: string; selectionBackground: string } {
+function terminalTheme(): {
+  background: string;
+  foreground: string;
+  cursor: string;
+  selectionBackground: string;
+} {
   const css = getComputedStyle(document.documentElement);
-  const token = (name: string, fallback: string): string => css.getPropertyValue(name).trim() || fallback;
+  const token = (name: string, fallback: string): string =>
+    css.getPropertyValue(name).trim() || fallback;
   return {
     background: token("--terminal-bg", "#ffffff"),
     foreground: token("--terminal-fg", "#2b2d33"),

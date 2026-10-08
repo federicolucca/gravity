@@ -191,3 +191,72 @@ img.bot-avatar {
   text-decoration: line-through;
   opacity: 0.7;
 }
+
+/* Tile icons: a line icon on a pastel square, one of ten colour families. */
+.bot-tile {
+  border-radius: 28%;
+  background: var(--tile-bg);
+  color: var(--tile-fg);
+}
+
+.bot-tile svg {
+  width: 58%;
+  height: 58%;
+}
+
+.tile-violet {
+  --tile-bg: #ede9fe;
+  --tile-fg: #6d28d9;
+}
+.tile-amber {
+  --tile-bg: #fef3c7;
+  --tile-fg: #b45309;
+}
+.tile-pink {
+  --tile-bg: #fce7f3;
+  --tile-fg: #be185d;
+}
+.tile-sky {
+  --tile-bg: #e0f2fe;
+  --tile-fg: #0369a1;
+}
+.tile-teal {
+  --tile-bg: #ccfbf1;
+  --tile-fg: #0f766e;
+}
+.tile-rose {
+  --tile-bg: #ffe4e6;
+  --tile-fg: #be123c;
+}
+.tile-blue {
+  --tile-bg: #dbeafe;
+  --tile-fg: #1d4ed8;
+}
+.tile-yellow {
+  --tile-bg: #fef9c3;
+  --tile-fg: #a16207;
+}
+.tile-indigo {
+  --tile-bg: #e0e7ff;
+  --tile-fg: #4338ca;
+}
+.tile-green {
+  --tile-bg: #dcfce7;
+  --tile-fg: #15803d;
+}
+
+:root[data-theme="dark"] .bot-tile {
+  background: color-mix(in srgb, var(--tile-fg) 28%, #1b1b1f);
+  color: color-mix(in srgb, var(--tile-bg) 80%, #ffffff);
+}
+
+.avatar-choice .bot-avatar {
+  width: 32px;
+  height: 32px;
+  opacity: 0.7;
+}
+
+.avatar-choice:hover:not(:disabled) .bot-avatar,
+.avatar-choice-on .bot-avatar {
+  opacity: 1;
+}

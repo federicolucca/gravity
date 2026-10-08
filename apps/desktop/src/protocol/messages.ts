@@ -63,6 +63,11 @@ export type ServerReply =
       readonly activity: readonly BotActivity[];
     })
   | (ReplyBase & {
+      readonly type: "bot_actions";
+      /** Bot id to what that working bot is doing now. */
+      readonly actions: Readonly<Record<string, string>>;
+    })
+  | (ReplyBase & {
       readonly type: "uploaded";
       readonly file: string;
       readonly path: string;

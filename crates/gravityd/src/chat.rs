@@ -12,6 +12,8 @@ use serde_json::Value;
 
 use crate::activity::{newest_transcript, tail_lines_within, transcript_dir};
 
+pub mod action;
+
 /// How much of the transcript's tail to read. Tool results make entries
 /// large, so this is far more than the preview needs.
 const TAIL_BYTES: u64 = 8 << 20;
@@ -149,7 +151,7 @@ fn push_queued(items: &mut Vec<ChatItem>, entry: &Value, at: &str) {
 /// A prompt, split into an owner message or an incoming bus message.
 fn push_prompt(items: &mut Vec<ChatItem>, text: &str, at: &str) {
     match parse_bus_header(text) {
-        Some((sender, body)) if sender == "USER" => {
+        Some(("USER", body)) => {
             items.push(ChatItem::new("user", at, body.to_string()));
         }
         Some((sender, body)) => {
@@ -206,7 +208,7 @@ fn push_tool(items: &mut Vec<ChatItem>, block: &Value, at: &str) {
 }
 
 /// The one input field that says what a tool call did.
-fn step_detail(name: &str, input: &Value) -> String {
+pub(crate) fn step_detail(name: &str, input: &Value) -> String {
     let keys: &[&str] = match name {
         "Bash" => &["description", "command"],
         "Read" | "Edit" | "Write" | "NotebookEdit" => &["file_path", "notebook_path"],
@@ -214,7 +216,15 @@ fn step_detail(name: &str, input: &Value) -> String {
         "WebFetch" => &["url"],
         "WebSearch" => &["query"],
         "Agent" | "Task" => &["description"],
-        _ => &["description", "command", "path", "file_path", "query", "pattern", "to"],
+        _ => &[
+            "description",
+            "command",
+            "path",
+            "file_path",
+            "query",
+            "pattern",
+            "to",
+        ],
     };
     keys.iter()
         .map(|k| str_field(input, k))
@@ -254,14 +264,17 @@ fn block_type(block: &Value) -> &str {
 }
 
 fn block_text(block: &Value) -> Option<String> {
-    block.get("text").and_then(Value::as_str).map(str::to_string)
+    block
+        .get("text")
+        .and_then(Value::as_str)
+        .map(str::to_string)
 }
 
 fn str_field(v: &Value, key: &str) -> String {
     v.get(key).and_then(Value::as_str).unwrap_or("").to_string()
 }
 
-fn clip(text: &str) -> String {
+pub(crate) fn clip(text: &str) -> String {
     let line = text.lines().next().unwrap_or("").trim();
     if line.chars().count() <= MAX_DETAIL_CHARS {
         return line.to_string();

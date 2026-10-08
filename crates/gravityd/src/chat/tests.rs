@@ -19,7 +19,9 @@ fn keeps_the_dialogue_and_folds_tool_calls_into_one_steps_item() {
     let items = from_lines(&lines(&[
         typed("check the deploy"),
         said(json!([{ "type": "text", "text": "Checking." }])),
-        said(json!([{ "type": "tool_use", "name": "Bash", "input": { "command": "ls", "description": "List files" } }])),
+        said(
+            json!([{ "type": "tool_use", "name": "Bash", "input": { "command": "ls", "description": "List files" } }]),
+        ),
         json!({ "type": "user", "message": { "content": [{ "type": "tool_result", "content": "x" }] } }),
         said(json!([{ "type": "tool_use", "name": "Read", "input": { "file_path": "/a.rs" } }])),
         said(json!([{ "type": "text", "text": "All good." }])),
@@ -29,8 +31,14 @@ fn keeps_the_dialogue_and_folds_tool_calls_into_one_steps_item() {
     assert_eq!(
         items[2].steps,
         [
-            Step { tool: "Bash".into(), detail: "List files".into() },
-            Step { tool: "Read".into(), detail: "/a.rs".into() },
+            Step {
+                tool: "Bash".into(),
+                detail: "List files".into()
+            },
+            Step {
+                tool: "Read".into(),
+                detail: "/a.rs".into()
+            },
         ]
     );
 }
@@ -41,13 +49,25 @@ fn splits_bus_traffic_from_owner_prompts() {
         typed("[msg #8 from USER · chat] status?"),
         json!({ "type": "attachment", "timestamp": "t3", "attachment": {
             "type": "queued_command", "prompt": "[msg #9 from Arty @ mac · task · task_id 42] run it" } }),
-        said(json!([{ "type": "tool_use", "name": "mcp__gravity-bus__send_message",
-            "input": { "to": "Reflex", "body": "done" } }])),
+        said(
+            json!([{ "type": "tool_use", "name": "mcp__gravity-bus__send_message",
+            "input": { "to": "Reflex", "body": "done" } }]),
+        ),
     ]));
     assert_eq!(items[0].kind, "user");
     assert_eq!(items[0].text, "status?");
-    assert_eq!((items[1].kind, items[1].peer.as_str(), items[1].text.as_str()), ("bus_in", "Arty", "run it"));
-    assert_eq!((items[2].kind, items[2].peer.as_str()), ("bus_out", "Reflex"));
+    assert_eq!(
+        (
+            items[1].kind,
+            items[1].peer.as_str(),
+            items[1].text.as_str()
+        ),
+        ("bus_in", "Arty", "run it")
+    );
+    assert_eq!(
+        (items[2].kind, items[2].peer.as_str()),
+        ("bus_out", "Reflex")
+    );
 }
 
 #[test]

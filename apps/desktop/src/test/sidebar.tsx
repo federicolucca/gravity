@@ -33,6 +33,7 @@ export function renderSidebar(over: Partial<Parameters<typeof Sidebar>[0]> = {})
     failedByBot: new Map<string, number>(),
     nextRun: {},
     activityByBot: {},
+    actionByBot: {},
     pendingDecisions: dfx.pendingCounts({ by_project: {}, total: 0 }),
     selection: { kind: "none" } as const,
     canControl: true,

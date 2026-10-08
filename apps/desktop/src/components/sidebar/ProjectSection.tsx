@@ -95,6 +95,7 @@ export default function ProjectSection(props: ProjectSectionProps): ReactElement
               failed={props.failedByBot.get(bot.id) ?? 0}
               next={props.nextRun[bot.id]}
               activity={props.activityByBot[bot.id]}
+              action={props.actionByBot[bot.id]}
               selected={selectedBotId === bot.id}
               canControl={canControl}
               onClick={() => {

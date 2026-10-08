@@ -233,24 +233,26 @@
 
 .dot-starting,
 .dot-stopping {
-  background: var(--blue);
+  background: var(--amber);
   opacity: 0.6;
 }
 
-.dot-working {
-  background: var(--blue);
+.dot-working,
+.tone-busy {
+  background: var(--amber);
   position: relative;
 }
 
 /* The halo animates transform and opacity on a pseudo-element so it stays on
    the compositor; animating box-shadow re-resolved style and re-laid out the
    whole sidebar every frame for as long as any bot was working. */
-.dot-working::after {
+.dot-working::after,
+.tone-busy::after {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  background: var(--blue);
+  background: inherit;
   pointer-events: none;
   animation: dot-pulse 1.2s ease-in-out infinite;
 }
@@ -267,7 +269,7 @@
 }
 
 .dot-stopped {
-  background: var(--gray);
+  background: var(--red);
 }
 
 /* Scale 2.11 reproduces the old 5px shadow spread on the 9px base dot. */
@@ -281,4 +283,41 @@
     transform: scale(2.11);
     opacity: 0;
   }
+}
+
+/* Status dots by tone: green free, orange busy, blue idle, red disconnected. */
+.tone-free {
+  background: var(--green);
+}
+
+.tone-idle {
+  background: var(--blue);
+}
+
+.tone-down {
+  background: var(--red);
+}
+
+.bot-row-status {
+  display: block;
+  font-size: 11.5px;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-dim);
+}
+
+.status-busy {
+  color: var(--amber);
+}
+
+.status-down {
+  color: var(--red);
+}
+
+.row-hand {
+  display: inline-flex;
+  flex: none;
+  color: var(--amber);
 }

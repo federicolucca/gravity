@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
 import { iconSrc } from "./botIcons";
+import { tileFor } from "./botTiles";
 
 /**
  * A bot's avatar: one of the built-in icons, a flat colour swatch, or — when
@@ -45,6 +46,15 @@ export default function BotAvatar({
 
   // An unknown icon name falls through to the swatch rather than rendering a
   // hole, which is what a client older than the daemon would otherwise show.
+  const tile = tileFor(avatar);
+  if (tile !== undefined) {
+    const { Icon } = tile;
+    return (
+      <span className={`${className} bot-tile tile-${tile.family}`} aria-hidden="true">
+        <Icon strokeWidth={1.75} />
+      </span>
+    );
+  }
   const src = iconSrc(avatar);
   if (src !== undefined) {
     return <img className={className} src={src} alt="" aria-hidden="true" />;

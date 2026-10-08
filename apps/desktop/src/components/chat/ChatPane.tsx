@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ReactElement } from "react";
 import type { DaemonApi } from "../../protocol/api";
 import type { Bot, ChatItem } from "../../protocol/entities";
@@ -28,19 +28,29 @@ export default function ChatPane({ client, bot, canWrite }: ChatPaneProps): Reac
   const botId = bot.id;
   const working = bot.state === "working";
 
-  const load = useCallback(async (): Promise<void> => {
-    try {
-      const reply = await client.request({ type: "get_chat", bot_id: botId }, "chat");
-      setItems(reply.items);
-    } catch {
-      setItems((current) => current ?? []);
-    }
-  }, [client, botId]);
+  // Re-reads on demand: after a send, before any push says so.
+  const reloadRef = useRef<(() => void) | null>(null);
+  // The owner's message, shown until the transcript carries it.
+  const [pending, setPending] = useState<ChatItem | null>(null);
 
   useEffect(() => {
-    setItems(null);
-    pinnedRef.current = true;
+    let alive = true;
+    const load = async (): Promise<void> => {
+      try {
+        const reply = await client.request({ type: "get_chat", bot_id: botId }, "chat");
+        if (alive) {
+          setItems(reply.items);
+        }
+      } catch {
+        if (alive) {
+          setItems((current) => current ?? []);
+        }
+      }
+    };
     void load();
+    reloadRef.current = () => {
+      void load();
+    };
     const offActivity = client.on("activity_update", (push) => {
       if (push.activity.bot_id === botId) {
         void load();
@@ -51,31 +61,32 @@ export default function ChatPane({ client, bot, canWrite }: ChatPaneProps): Reac
         void load();
       }
     });
+    const timer = working
+      ? window.setInterval(() => {
+          void load();
+        }, WORKING_POLL_MS)
+      : undefined;
     return () => {
+      alive = false;
+      reloadRef.current = null;
       offActivity();
       offState();
-    };
-  }, [client, botId, load]);
-
-  useEffect(() => {
-    if (!working) {
-      return undefined;
-    }
-    const timer = window.setInterval(() => {
-      void load();
-    }, WORKING_POLL_MS);
-    return () => {
       window.clearInterval(timer);
     };
-  }, [working, load]);
+  }, [client, botId, working]);
+
+  // Any owner prompt newer than the pending one means the transcript caught up.
+  const landed =
+    pending !== null && (items ?? []).some((item) => item.kind === "user" && item.at >= pending.at);
+  const shown = pending === null || landed ? items : [...(items ?? []), pending];
 
   // Follow new items only while the reader sits at the bottom.
   useEffect(() => {
     const el = scrollRef.current;
-    if (el !== null && pinnedRef.current) {
+    if ((items !== null || pending !== null) && el !== null && pinnedRef.current) {
       el.scrollTop = el.scrollHeight;
     }
-  }, [items]);
+  }, [items, pending]);
 
   const onScroll = (): void => {
     const el = scrollRef.current;
@@ -97,26 +108,33 @@ export default function ChatPane({ client, bot, canWrite }: ChatPaneProps): Reac
     }
     pinnedRef.current = true;
     const prompt = promptWithAttachments(text, paths);
+    // Back-dated a little so a transcript clock a few seconds behind still counts.
+    setPending({ kind: "user", at: new Date(Date.now() - 5000).toISOString(), text: prompt });
     // Bracketed paste keeps a multi-line prompt as one message; the Enter
     // after it is what submits, exactly as when the owner types it.
     client.fire({ type: "input", bot_id: botId, data: `\u001b[200~${prompt}\u001b[201~` });
     window.setTimeout(() => {
       client.fire({ type: "input", bot_id: botId, data: "\r" });
     }, 120);
+    for (const delay of [1000, 3000]) {
+      window.setTimeout(() => {
+        reloadRef.current?.();
+      }, delay);
+    }
   };
 
   return (
     <div className="chat-pane">
       <div className="chat-scroll" ref={scrollRef} onScroll={onScroll}>
         <div className="chat-column">
-          {items === null ? <p className="chat-empty">Loading…</p> : null}
-          {items !== null && items.length === 0 ? (
+          {shown === null ? <p className="chat-empty">Loading…</p> : null}
+          {shown !== null && shown.length === 0 ? (
             <p className="chat-empty">No conversation yet.</p>
           ) : null}
-          {(items ?? []).map((item, index) => {
-            const previous = index > 0 ? items?.[index - 1] : undefined;
+          {(shown ?? []).map((item, index) => {
+            const previous = index > 0 ? shown?.[index - 1] : undefined;
             return (
-              <div key={`${item.at}-${index}`}>
+              <div key={`${item.at}-${item.kind}-${item.text?.length ?? item.steps?.length ?? 0}`}>
                 {needsTimeGap(previous?.at, item.at) ? (
                   <div className="chat-time">{dayLabel(item.at)}</div>
                 ) : null}

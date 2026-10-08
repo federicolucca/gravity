@@ -12,11 +12,18 @@ function avatarOf(container: HTMLElement): HTMLElement {
 }
 
 describe("BotAvatar", () => {
-  it("renders an icon avatar as its bundled image", () => {
-    const { container } = render(<BotAvatar avatar="icon:orbit" name="alice" id="b1" />);
+  it("renders a legacy icon avatar as its bundled image", () => {
+    const { container } = render(<BotAvatar avatar="icon:ember" name="alice" id="b1" />);
     const node = avatarOf(container);
     expect(node.tagName).toBe("IMG");
-    expect(node.getAttribute("src")).toBe(BOT_ICONS.orbit);
+    expect(node.getAttribute("src")).toBe(BOT_ICONS.ember);
+  });
+
+  it("renders a tile icon as a line icon on its colour family", () => {
+    const { container } = render(<BotAvatar avatar="icon:orbit" name="alice" id="b1" />);
+    const node = avatarOf(container);
+    expect(node.classList.contains("tile-violet")).toBe(true);
+    expect(node.querySelector("svg")).not.toBeNull();
   });
 
   /** A client older than the daemon must not render a broken image. */

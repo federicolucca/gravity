@@ -25,7 +25,13 @@ fn sanitize(name: &str) -> String {
     let base = name.rsplit(['/', '\\']).next().unwrap_or("");
     let clean: String = base
         .chars()
-        .map(|c| if c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_') { c } else { '_' })
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_') {
+                c
+            } else {
+                '_'
+            }
+        })
         .take(MAX_NAME_CHARS)
         .collect();
     let clean = clean.trim_start_matches('.');
@@ -69,7 +75,11 @@ impl Conn {
         let path = dir.join(&file);
         let appending = req.get("file").is_some();
         anyhow::ensure!(!appending || path.is_file(), "unknown 'file'");
-        let current = if appending { fs::metadata(&path)?.len() } else { 0 };
+        let current = if appending {
+            fs::metadata(&path)?.len()
+        } else {
+            0
+        };
         anyhow::ensure!(
             current + bytes.len() as u64 <= MAX_UPLOAD_BYTES,
             "file exceeds the {} MiB upload limit",
@@ -95,7 +105,10 @@ mod tests {
     #[test]
     fn sanitize_keeps_a_safe_base_name() {
         assert_eq!(sanitize("../../etc/passwd"), "passwd");
-        assert_eq!(sanitize("C:\\Users\\me\\Screen Shot (1).png"), "Screen_Shot__1_.png");
+        assert_eq!(
+            sanitize("C:\\Users\\me\\Screen Shot (1).png"),
+            "Screen_Shot__1_.png"
+        );
         assert_eq!(sanitize(".hidden"), "hidden");
         assert_eq!(sanitize(""), "file");
     }

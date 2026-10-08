@@ -127,7 +127,9 @@ impl Conn {
         let limit = req
             .get("limit")
             .and_then(Value::as_u64)
-            .map_or(crate::chat::DEFAULT_LIMIT, |n| usize::try_from(n).unwrap_or(usize::MAX));
+            .map_or(crate::chat::DEFAULT_LIMIT, |n| {
+                usize::try_from(n).unwrap_or(usize::MAX)
+            });
         let bot = self
             .app
             .db
@@ -148,6 +150,40 @@ impl Conn {
             let _ = out.send(json!({
                 "type": "chat", "req_id": req_id, "bot_id": bot_id, "items": items
             }));
+        });
+        Ok(())
+    }
+
+    /// `list_bot_actions {project_id?}`: what each working bot is doing now.
+    pub(super) fn list_bot_actions(&self, req_id: &Value, req: &Value) -> anyhow::Result<()> {
+        let project_id = req
+            .get("project_id")
+            .and_then(|v| v.as_str())
+            .map(str::to_string);
+        let bots = self.app.db.list_bots(project_id.as_deref())?;
+        let working: Vec<String> = bots
+            .iter()
+            .filter(|bot| {
+                bot.runtime != bus::BotRuntime::CodexCli
+                    && self.app.supervisor.state(&bot.id).0 == bus::BotState::Working
+            })
+            .map(|bot| bot.id.clone())
+            .collect();
+        let app = self.app.clone();
+        let out = self.out.clone();
+        let req_id = req_id.clone();
+        tokio::task::spawn_blocking(move || {
+            let actions: serde_json::Map<String, Value> = bots
+                .iter()
+                .filter(|bot| working.contains(&bot.id))
+                .filter_map(|bot| {
+                    let workspace = Path::new(&bot.workspace_path);
+                    let action = crate::chat::action::for_workspace(&app.cfg.user_home, workspace)?;
+                    Some((bot.id.clone(), Value::String(action)))
+                })
+                .collect();
+            let _ =
+                out.send(json!({ "type": "bot_actions", "req_id": req_id, "actions": actions }));
         });
         Ok(())
     }

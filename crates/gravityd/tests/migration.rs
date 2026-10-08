@@ -144,7 +144,9 @@ fn upgrading_deals_an_icon_to_emoji_and_bare_avatars() {
             .strip_prefix("icon:")
             .unwrap_or_else(|| panic!("{id} kept a non-icon avatar: {avatar}"));
         assert!(
-            bus::avatar::ICONS.contains(&icon),
+            // The migration predates the tile set and deals the picture icons,
+            // which stay valid.
+            bus::avatar::ICONS.contains(&icon) || bus::avatar::LEGACY_ICONS.contains(&icon),
             "{id} got an icon the client does not ship: {icon}"
         );
     }

@@ -157,7 +157,7 @@ export default function BotView(props: BotViewProps): ReactElement {
             </div>
             {tab === "chat" ? (
               <div className="tab-pane">
-                <ChatPane client={client} bot={bot} canWrite={canWrite} />
+                <ChatPane key={bot.id} client={client} bot={bot} canWrite={canWrite} />
               </div>
             ) : null}
             {tab === "routines" ? (

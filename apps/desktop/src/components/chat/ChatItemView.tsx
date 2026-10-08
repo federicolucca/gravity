@@ -33,8 +33,8 @@ function Steps({ item }: { readonly item: ChatItem }): ReactElement {
       </button>
       {open ? (
         <ol className="chat-steps-list">
-          {steps.map((step, index) => (
-            <li key={index}>
+          {steps.map((step, n) => (
+            <li key={`${n + 1}:${step.tool}`}>
               <span className="chat-step-tool">{step.tool}</span>
               {step.detail === "" ? null : <span className="chat-step-detail">{step.detail}</span>}
             </li>

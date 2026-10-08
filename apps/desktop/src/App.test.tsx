@@ -327,12 +327,12 @@ describe("App state", () => {
 
     daemon.emit("bot_updated", {
       type: "bot_updated",
-      bot: fx.bot({ name: "alice-renamed", avatar: "icon:rune" }),
+      bot: fx.bot({ name: "alice-renamed", avatar: "icon:rocket" }),
     });
     await waitFor(() => {
       expect(botRow("alice-renamed")).toBeInTheDocument();
       expect(screen.getByDisplayValue("alice-renamed")).toBeInTheDocument();
-      expect(screen.getByRole("radio", { name: "rune" })).toBeChecked();
+      expect(screen.getByRole("radio", { name: "rocket" })).toBeChecked();
     });
     expect(screen.queryByText("alice", { selector: ".bot-row-name" })).not.toBeInTheDocument();
 

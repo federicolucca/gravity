@@ -2,7 +2,9 @@ import type { ReactElement } from "react";
 import { useScrollSelectedIntoView } from "../../hooks/useScrollSelectedIntoView";
 import type { Bot, BotActivity } from "../../protocol/entities";
 import { fmtShortTime } from "../../util";
+import { Hand } from "lucide-react";
 import BotAvatar from "../BotAvatar";
+import { botStatus } from "./botStatus";
 import { useBotMenu } from "./useBotMenu";
 
 interface BotRowProps {
@@ -12,6 +14,8 @@ interface BotRowProps {
   readonly next: string | undefined;
   /** The bot's newest turn or bus message, when it has said anything. */
   readonly activity: BotActivity | undefined;
+  /** What the bot is doing now, while it works. */
+  readonly action?: string | undefined;
   readonly selected: boolean;
   readonly canControl: boolean;
   readonly onClick: () => void;
@@ -37,6 +41,7 @@ export default function BotRow({
   failed,
   next,
   activity,
+  action,
   selected,
   canControl,
   onClick,
@@ -45,6 +50,7 @@ export default function BotRow({
 }: BotRowProps): ReactElement {
   const menu = useBotMenu({ bot, pinned: false, canControl, onTogglePin, onDelete });
   const preview = previewOf(bot, activity);
+  const status = botStatus(bot, activity, action);
   const rowRef = useScrollSelectedIntoView<HTMLButtonElement>(selected);
 
   return (
@@ -59,7 +65,7 @@ export default function BotRow({
       >
         <span className="bot-row-avatar">
           <BotAvatar avatar={bot.avatar} name={bot.name} id={bot.id} size="lg" />
-          <span className={`dot dot-${bot.state}`} />
+          <span className={`dot tone-${status.tone}`} />
         </span>
 
         <span className="bot-row-body">
@@ -69,12 +75,18 @@ export default function BotRow({
               <span className="bot-row-time">{fmtShortTime(activity.at)}</span>
             ) : null}
           </span>
+          <span className={`bot-row-status status-${status.tone}`}>{status.label}</span>
           <span className="bot-row-bottom">
             <span className="bot-row-preview">{preview}</span>
             {next !== undefined ? <span className="row-next">⏱ {fmtShortTime(next)}</span> : null}
             {failed > 0 ? (
               <span className="badge badge-failed" title={`${failed} failed deliveries`}>
                 {failed}
+              </span>
+            ) : null}
+            {status.needsYou ? (
+              <span className="row-hand" title="Needs you" aria-label="Needs you">
+                <Hand size={14} strokeWidth={2} aria-hidden="true" />
               </span>
             ) : null}
             {unread > 0 ? <span className="badge badge-unread">{unread}</span> : null}

@@ -56,7 +56,7 @@ export interface Bot {
 }
 
 /** One tool call inside a `steps` chat item. */
-export interface ChatStep {
+interface ChatStep {
   readonly tool: string;
   readonly detail: string;
 }

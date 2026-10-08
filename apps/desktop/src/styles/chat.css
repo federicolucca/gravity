@@ -17,7 +17,7 @@
 .chat-column {
   max-width: 1180px;
   margin: 0 auto;
-  padding: 20px 24px 12px;
+  padding: 20px 24px 28px;
   display: flex;
   flex-direction: column;
   gap: 6px;

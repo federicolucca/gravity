@@ -19,14 +19,70 @@ use std::fmt;
 /// enough that the value stays cheap to ship in every `bot` frame.
 pub const MAX_AVATAR_BYTES: usize = 64;
 
-/// The built-in bot icons, in the order the client shows them in its picker.
+/// The built-in bot icons, in the order the client shows them in its picker:
+/// line icons on pastel tiles, the set new bots are dealt from.
 ///
 /// This list is the contract: the daemon rejects any other name, so a client
 /// never has to render an icon it does not have. Adding one means shipping the
 /// asset and appending here in the same change.
-pub const ICONS: [&str; 20] = [
-    "orbit", "ember", "moss", "nova", "tide", "quartz", "volt", "dusk", "copper", "frost", "halo",
-    "glitch", "slate", "bloom", "echo", "pixel", "rune", "cloud", "comet", "mint",
+pub const ICONS: [&str; 50] = [
+    "orbit",
+    "zap",
+    "pencil",
+    "beyond",
+    "wrench",
+    "pulse",
+    "robot",
+    "star",
+    "network",
+    "sprout",
+    "newspaper",
+    "scale",
+    "calculator",
+    "dumbbell",
+    "passport",
+    "mountain",
+    "waves",
+    "leaf",
+    "trend",
+    "video",
+    "mail",
+    "calendar",
+    "comic",
+    "book",
+    "home",
+    "globe",
+    "server",
+    "idea",
+    "mic",
+    "chip",
+    "eye",
+    "code",
+    "terminal",
+    "shield",
+    "database",
+    "cloud",
+    "rocket",
+    "heart",
+    "gamepad",
+    "palette",
+    "image",
+    "briefcase",
+    "fish",
+    "compass",
+    "pin",
+    "package",
+    "bell",
+    "search",
+    "coin",
+    "minipc",
+];
+
+/// The earlier picture icons. Still accepted so existing bots keep theirs, but
+/// no longer offered or dealt.
+pub const LEGACY_ICONS: [&str; 18] = [
+    "ember", "moss", "nova", "tide", "quartz", "volt", "dusk", "copper", "frost", "halo", "glitch",
+    "slate", "bloom", "echo", "pixel", "rune", "comet", "mint",
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -85,7 +141,7 @@ pub fn parse(raw: &str) -> Result<Avatar, String> {
 
 fn parse_icon(icon: &str) -> Result<Avatar, String> {
     let name = icon.to_ascii_lowercase();
-    if !ICONS.contains(&name.as_str()) {
+    if !ICONS.contains(&name.as_str()) && !LEGACY_ICONS.contains(&name.as_str()) {
         return Err(format!(
             "unknown icon '{icon}'; pick one of {}",
             ICONS.join(", ")

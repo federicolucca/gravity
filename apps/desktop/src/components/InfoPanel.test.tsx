@@ -123,35 +123,35 @@ describe("InfoPanel", () => {
     const daemon = new FakeDaemon().onRequest("update_bot", () => ({
       type: "bot",
       req_id: "1",
-      bot: fx.bot({ name: "alice2", avatar: "icon:nova" }),
+      bot: fx.bot({ name: "alice2", avatar: "icon:star" }),
     }));
     renderPanel(daemon);
 
     await user.type(field("Name"), "2");
-    await user.click(screen.getByRole("radio", { name: "nova" }));
+    await user.click(screen.getByRole("radio", { name: "star" }));
     await user.click(screen.getByRole("button", { name: "Save" }));
 
     await waitFor(() => {
       expect(daemon.requests.some((r) => r.body.type === "update_bot")).toBe(true);
     });
     const sent = daemon.requests.find((r) => r.body.type === "update_bot");
-    expect(sent?.body).toMatchObject({ name: "alice2", avatar: "icon:nova" });
+    expect(sent?.body).toMatchObject({ name: "alice2", avatar: "icon:star" });
   });
 
   /** The picker is the only avatar control, so it must show what is set. */
   it("marks the bot's current icon as chosen", () => {
-    renderPanel(new FakeDaemon(), { bot: fx.bot({ avatar: "icon:tide" }) });
-    expect(screen.getByRole("radio", { name: "tide" })).toBeChecked();
-    expect(screen.getByRole("radio", { name: "nova" })).not.toBeChecked();
+    renderPanel(new FakeDaemon(), { bot: fx.bot({ avatar: "icon:waves" }) });
+    expect(screen.getByRole("radio", { name: "waves" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "star" })).not.toBeChecked();
   });
 
   it("reflects a bot-driven rename and avatar change", () => {
     const { rerenderBot } = renderPanel(new FakeDaemon());
 
-    rerenderBot(fx.bot({ name: "Thrasymachus", avatar: "icon:rune" }));
+    rerenderBot(fx.bot({ name: "Thrasymachus", avatar: "icon:rocket" }));
 
     expect(field("Name")).toHaveValue("Thrasymachus");
-    expect(screen.getByRole("radio", { name: "rune" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "rocket" })).toBeChecked();
     expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
   });
 
@@ -161,10 +161,10 @@ describe("InfoPanel", () => {
     await user.clear(field("Name"));
     await user.type(field("Name"), "Local draft");
 
-    rerenderBot(fx.bot({ name: "Thrasymachus", avatar: "icon:rune" }));
+    rerenderBot(fx.bot({ name: "Thrasymachus", avatar: "icon:rocket" }));
 
     expect(field("Name")).toHaveValue("Local draft");
-    expect(screen.getByRole("radio", { name: "rune" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "rocket" })).toBeChecked();
     expect(screen.getByRole("button", { name: "Save" })).toBeEnabled();
   });
 

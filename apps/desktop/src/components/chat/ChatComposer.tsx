@@ -10,7 +10,11 @@ interface ChatComposerProps {
 }
 
 /** Enter sends, Shift+Enter breaks the line; files come from "+", paste or drop. */
-export default function ChatComposer({ botName, disabled, onSend }: ChatComposerProps): ReactElement {
+export default function ChatComposer({
+  botName,
+  disabled,
+  onSend,
+}: ChatComposerProps): ReactElement {
   const [draft, setDraft] = useState("");
   const [files, setFiles] = useState<readonly File[]>([]);
   const [sending, setSending] = useState(false);
@@ -23,7 +27,7 @@ export default function ChatComposer({ botName, disabled, onSend }: ChatComposer
   const addFiles = (list: FileList | null): void => {
     if (list !== null && list.length > 0) {
       const added = Array.from(list);
-      setFiles((current) => [...current, ...added]);
+      setFiles((current) => [...current, ...added.filter((file) => !current.includes(file))]);
     }
   };
 
@@ -79,8 +83,8 @@ export default function ChatComposer({ botName, disabled, onSend }: ChatComposer
     >
       {files.length > 0 ? (
         <ul className="chat-pending">
-          {files.map((file, index) => (
-            <li key={`${file.name}-${index}`} className="chat-file">
+          {files.map((file) => (
+            <li key={`${file.name}-${file.size}-${file.lastModified}`} className="chat-file">
               <Paperclip size={13} strokeWidth={2} aria-hidden="true" />
               <span>{file.name}</span>
               <button
@@ -88,7 +92,7 @@ export default function ChatComposer({ botName, disabled, onSend }: ChatComposer
                 aria-label={`Remove ${file.name}`}
                 disabled={sending}
                 onClick={() => {
-                  setFiles((current) => current.filter((_, i) => i !== index));
+                  setFiles((current) => current.filter((other) => other !== file));
                 }}
               >
                 <X size={12} strokeWidth={2.25} aria-hidden="true" />

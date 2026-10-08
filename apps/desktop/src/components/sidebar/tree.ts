@@ -9,6 +9,8 @@ export interface SidebarTreeProps {
   /** Pinned bot ids in display order; those bots move to the pinned strip. */
   readonly pinnedBotIds: readonly string[];
   readonly activityByBot: Readonly<Record<string, BotActivity>>;
+  /** What each working bot is doing now, keyed by bot id. */
+  readonly actionByBot: Readonly<Record<string, string>>;
   readonly selection: Selection;
   readonly canControl: boolean;
   readonly onSelect: (selection: Selection) => void;

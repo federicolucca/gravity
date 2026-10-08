@@ -6,7 +6,7 @@ import type { Bot, NotifyLevel } from "../protocol/entities";
 import { revealBotWorkspace } from "../reveal";
 import { errText } from "../util";
 import BotAvatar from "./BotAvatar";
-import { BOT_ICONS } from "./botIcons";
+import { BOT_TILES } from "./botTiles";
 import BotHistory from "./bot/BotHistory";
 import BotRuntimePicker from "./bot/BotRuntimePicker";
 
@@ -179,7 +179,7 @@ export default function InfoPanel({
           Avatar
         </span>
         <div className="avatar-picker" role="radiogroup" aria-labelledby="avatar-label">
-          {Object.entries(BOT_ICONS).map(([icon, src]) => {
+          {Object.keys(BOT_TILES).map((icon) => {
             const value = `icon:${icon}`;
             return (
               <button
@@ -194,7 +194,7 @@ export default function InfoPanel({
                   set("avatar", value);
                 }}
               >
-                <img src={src} alt="" />
+                <BotAvatar avatar={value} name={icon} id={icon} size="lg" />
               </button>
             );
           })}
