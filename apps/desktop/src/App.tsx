@@ -1,3 +1,4 @@
+import { ChevronLeft } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import type { ReactElement } from "react";
 import { useDaemonActions } from "./app/useDaemonActions";
@@ -139,7 +140,7 @@ export default function App(): ReactElement {
 
   return (
     <SetupGate setup={setup} toasts={toasts} onDismissToast={dismissToast}>
-      <div className="app">
+      <div className={daemon.selection.kind === "none" ? "app" : "app app-open"}>
         <Sidebar
           status={daemon.status}
           endpoint={daemon.endpoint}
@@ -162,6 +163,19 @@ export default function App(): ReactElement {
           onOpenSettings={overlays.openSettings}
         />
         <main className="main">
+          {/* Narrow screens show the list or one view; this goes back to the list. */}
+          {daemon.selection.kind === "none" ? null : (
+            <button
+              type="button"
+              className="mobile-back"
+              aria-label="Back to the list"
+              onClick={() => {
+                select({ kind: "none" });
+              }}
+            >
+              <ChevronLeft size={20} strokeWidth={2} aria-hidden="true" />
+            </button>
+          )}
           <MainPane
             client={client}
             daemon={daemon}

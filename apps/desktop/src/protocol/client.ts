@@ -205,7 +205,9 @@ export class DaemonClient implements DaemonApi {
     }
     let ws: WebSocket;
     try {
-      ws = new WebSocket(`ws://${this.endpoint.host}:${this.endpoint.port}/ws`);
+      // A page served over https may only open a secure socket.
+      const scheme = window.location.protocol === "https:" ? "wss" : "ws";
+      ws = new WebSocket(`${scheme}://${this.endpoint.host}:${this.endpoint.port}/ws`);
     } catch {
       this.scheduleReconnect();
       return;

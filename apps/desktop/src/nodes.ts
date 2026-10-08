@@ -91,8 +91,16 @@ export function upsertNode(nodes: readonly SavedNode[], node: SavedNode): readon
   return [...others, node];
 }
 
+/**
+ * `randomUUID` exists only in a secure context; the web client is also served
+ * over plain http on the LAN, where `getRandomValues` still works.
+ */
 export function newNodeId(): string {
-  return crypto.randomUUID();
+  if (typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
 /** Makes `node` the active credential; the caller then points the client at its endpoint. */
