@@ -67,8 +67,14 @@ impl Supervisor {
         // A bot is one continuous conversation: every start after the first
         // resumes the workspace's session, so a daemon restart is invisible to
         // the bot and to whoever was talking to it.
+        // A bot moved into an existing project continues that project's conversation.
+        let external = crate::paths::external::prepare(&self.inner.cfg, &workspace, BOT_TOKEN_ENV);
+        if external.as_ref().is_some_and(|e| e.has_transcript) {
+            let _ = self.inner.db.mark_bot_session(bot_id);
+        }
         let resume = bot.runtime == bus::BotRuntime::ClaudeCode && self.wants_resume(bot_id);
         let mut claude_args = self.inner.cfg.claude_args.clone();
+        claude_args.extend(external.iter().flat_map(|e| e.args.clone()));
         if resume {
             claude_args.push("--continue".to_string());
         }
@@ -137,7 +143,7 @@ impl Supervisor {
             }),
             bot_id: bot.id.clone(),
             bot_name: bot.name.clone(),
-            workspace,
+            workspace: external.map_or(workspace, |e| e.dir),
             claude_bin: self.inner.cfg.claude_bin.clone(),
             claude_args,
             env,

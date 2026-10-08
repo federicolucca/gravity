@@ -28,6 +28,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::config::Config;
 
+pub mod external;
 mod prompt;
 #[cfg(test)]
 mod tests;

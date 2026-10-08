@@ -68,9 +68,10 @@ const TAIL_BYTES: u64 = 1 << 20;
 const MAX_CHARS: usize = 200;
 
 /// Claude Code's transcript directory for a workspace: the absolute path with
-/// every `/` and `.` replaced by `-`, under `~/.claude/projects`.
+/// every `/` and `.` replaced by `-`, under `~/.claude/projects`. A bot with an
+/// external working directory keeps its transcripts under that directory.
 pub(crate) fn transcript_dir(home: &Path, workspace: &Path) -> PathBuf {
-    let mangled: String = workspace
+    let mangled: String = crate::paths::external::run_dir(workspace)
         .to_string_lossy()
         .chars()
         .map(|c| {
