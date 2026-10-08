@@ -40,6 +40,13 @@ fn external_dir(_workspace: &Path) -> Option<PathBuf> {
     None
 }
 
+/// Every Claude Code bot is also reachable through Claude Code Remote Control
+/// (claude.ai/code and the mobile app), under the bot's name, like the tmux
+/// sessions it replaces.
+pub fn remote_control_args(bot_name: &str) -> [String; 2] {
+    ["--remote-control".to_string(), bot_name.to_string()]
+}
+
 /// How to launch a bot whose runtime runs in an external directory.
 pub struct ExternalLaunch {
     pub dir: PathBuf,
