@@ -1,8 +1,9 @@
-//! The owner's emoji reactions to bot replies in the chat view.
+//! A bot's emoji reactions to the owner's messages in the chat view.
 //!
-//! A reaction is the owner's mark on one reply — one emoji per reply, keyed by
-//! the reply's transcript timestamp — and stays on this side: the bot never
-//! sees it. Kept per bot in one JSON file in the Gravity home.
+//! A reaction is the bot's mark on one owner message — one emoji per message,
+//! keyed by the message's transcript timestamp. The owner cannot react to bot
+//! replies; bots set theirs over MCP (`react_to_message`). Kept per bot in one
+//! JSON file in the Gravity home.
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -19,7 +20,7 @@ const MAX_KEY_CHARS: usize = 64;
 
 static LOCK: Mutex<()> = Mutex::new(());
 
-/// `bot id → reply key → emoji`.
+/// `bot id → owner message key → emoji`.
 type Reactions = BTreeMap<String, BTreeMap<String, String>>;
 
 fn reactions_path(home: &Path) -> PathBuf {
@@ -60,35 +61,28 @@ impl Conn {
         self.send(json!({ "type": "reactions", "req_id": req_id, "reactions": reactions }));
         Ok(())
     }
+}
 
-    /// `set_reaction {bot_id, key, emoji?}` → `{reactions}`; no emoji clears it.
-    pub(super) fn set_reaction(&self, req_id: &Value, req: &Value) -> anyhow::Result<()> {
-        let bot_id = Self::str_field(req, "bot_id")?;
-        let key = Self::str_field(req, "key")?;
-        anyhow::ensure!(
-            !key.is_empty() && key.chars().count() <= MAX_KEY_CHARS,
-            "invalid reply key"
-        );
-        let emoji = req
-            .get("emoji")
-            .and_then(Value::as_str)
-            .filter(|e| !e.is_empty());
-        if let Some(emoji) = emoji {
-            anyhow::ensure!(
-                emoji.chars().count() <= MAX_EMOJI_CHARS
-                    && !emoji.chars().any(char::is_alphanumeric),
-                "a reaction is one emoji"
-            );
-        }
-        anyhow::ensure!(self.app.db.get_bot(bot_id)?.is_some(), "bot not found");
-        let _guard = LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        let mut all = load(&self.app.cfg.home);
-        apply(&mut all, bot_id, key, emoji);
-        crate::paths::atomic_write_json(&reactions_path(&self.app.cfg.home), &json!(all))?;
-        let reactions = all.remove(bot_id).unwrap_or_default();
-        self.send(json!({ "type": "reactions", "req_id": req_id, "reactions": reactions }));
-        Ok(())
+/// An emoji is one reaction: short, and nothing alphanumeric in it.
+pub fn valid_emoji(emoji: &str) -> bool {
+    !emoji.is_empty()
+        && emoji.chars().count() <= MAX_EMOJI_CHARS
+        && !emoji.chars().any(char::is_alphanumeric)
+}
+
+/// Sets or clears (`None`) a bot's reaction to one of the owner's messages.
+pub fn react(home: &Path, bot_id: &str, key: &str, emoji: Option<&str>) -> anyhow::Result<()> {
+    anyhow::ensure!(
+        !key.is_empty() && key.chars().count() <= MAX_KEY_CHARS,
+        "invalid message key"
+    );
+    if let Some(emoji) = emoji {
+        anyhow::ensure!(valid_emoji(emoji), "a reaction is one emoji");
     }
+    let _guard = LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    let mut all = load(home);
+    apply(&mut all, bot_id, key, emoji);
+    crate::paths::atomic_write_json(&reactions_path(home), &json!(all))
 }
 
 #[cfg(test)]
@@ -105,5 +99,14 @@ mod tests {
         apply(&mut all, "b", "t1", None);
         apply(&mut all, "b", "t2", None);
         assert!(all.is_empty());
+    }
+
+    #[test]
+    fn only_a_short_emoji_is_a_reaction() {
+        assert!(valid_emoji("👍"));
+        assert!(valid_emoji("❤️"));
+        assert!(!valid_emoji(""));
+        assert!(!valid_emoji("ok"));
+        assert!(!valid_emoji("👍👍👍👍👍👍👍👍👍👍👍👍👍👍👍👍👍"));
     }
 }

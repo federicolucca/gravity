@@ -120,14 +120,6 @@ export type ClientRequestBody =
   | { readonly type: "save_profile"; readonly display_name: string; readonly avatar: string }
   | { readonly type: "list_reactions"; readonly bot_id: string }
   | {
-      readonly type: "set_reaction";
-      readonly bot_id: string;
-      /** The reply's transcript timestamp. */
-      readonly key: string;
-      /** Absent clears the reaction. */
-      readonly emoji?: string;
-    }
-  | {
       readonly type: "save_group";
       /** Absent creates a group. */
       readonly group_id?: string;

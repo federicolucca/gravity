@@ -18,8 +18,6 @@ interface ChatItemViewProps {
   readonly onDownload: (path: string) => Promise<void>;
   /** The owner's emoji on this reply; only bot replies take one. */
   readonly reaction?: string;
-  /** Absent where reactions are not offered. */
-  readonly onReact?: (emoji: string | null) => void;
 }
 
 function plural(count: number, word: string): string {
@@ -99,7 +97,13 @@ function MeAvatar(): ReactElement {
 }
 
 /** The owner's prompt; uploaded files show as chips above the bubble. */
-function UserMessage({ text }: { readonly text: string }): ReactElement {
+function UserMessage({
+  text,
+  reaction,
+}: {
+  readonly text: string;
+  readonly reaction: string | undefined;
+}): ReactElement {
   const { body, files } = splitAttachments(text);
   return (
     <div className="chat-line chat-line-user">
@@ -115,6 +119,7 @@ function UserMessage({ text }: { readonly text: string }): ReactElement {
           </ul>
         ) : null}
         {body !== "" ? <div className="chat-bubble chat-bubble-user">{body}</div> : null}
+        {reaction === undefined ? null : <Reaction emoji={reaction} />}
       </div>
       <MeAvatar />
     </div>
@@ -127,7 +132,6 @@ export default function ChatItemView({
   bot,
   onDownload,
   reaction,
-  onReact,
 }: ChatItemViewProps): ReactElement {
   switch (item.kind) {
     case "steps":
@@ -136,7 +140,7 @@ export default function ChatItemView({
     case "bus_out":
       return <BusNote item={item} />;
     case "user":
-      return <UserMessage text={item.text ?? ""} />;
+      return <UserMessage text={item.text ?? ""} reaction={reaction} />;
     case "bot":
       return (
         <div className="chat-line">
@@ -150,7 +154,6 @@ export default function ChatItemView({
               <Markdown>{item.text ?? ""}</Markdown>
             </div>
             <FileDownloads text={item.text ?? ""} onDownload={onDownload} />
-            {onReact === undefined ? null : <Reaction emoji={reaction} onReact={onReact} />}
           </div>
         </div>
       );

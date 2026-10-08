@@ -15,6 +15,7 @@ use crate::app::AppState;
 
 mod board;
 mod decisions;
+mod react;
 mod routines;
 mod schema;
 mod schema_decisions;
@@ -178,6 +179,7 @@ fn tool_call(app: &Arc<AppState>, bot_id: &str, params: &Value) -> Result<Value,
         "list_tags" => list_tags(app, bot_id),
         "upsert_tag" => upsert_tag(app, bot_id, &args),
         "retire_tag" => retire_tag(app, bot_id, &args),
+        "react_to_message" => react::react_to_message(app, bot_id, &args),
         "list_board_tasks" => board::list_board_tasks(app, bot_id),
         "add_board_task" => board::add_board_task(app, bot_id, &args),
         "update_board_task" => board::update_board_task(app, bot_id, &args),

@@ -28,7 +28,7 @@ mod machine;
 mod messaging;
 mod peers;
 mod profile;
-mod reactions;
+pub mod reactions;
 mod routines;
 mod runtime;
 mod tasks;

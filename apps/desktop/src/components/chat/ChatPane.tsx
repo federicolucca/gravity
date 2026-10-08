@@ -25,6 +25,8 @@ const WORKING_POLL_MS = 2500;
  * traffic as one-line notes, and the work in between folded into "details".
  * The terminal tab still shows everything; this is the readable view.
  */
+const REACTION_POLL_MS = 5000;
+
 export default function ChatPane({ client, bot, canWrite }: ChatPaneProps): ReactElement {
   const [items, setItems] = useState<readonly ChatItem[] | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -110,44 +112,27 @@ export default function ChatPane({ client, bot, canWrite }: ChatPaneProps): Reac
   const [sendError, setSendError] = useState<string | null>(null);
   const [reactions, setReactions] = useState<Readonly<Record<string, string>>>({});
 
+  // Bots react while they work, so the reactions are re-read now and then.
   useEffect(() => {
     let alive = true;
-    client
-      .request({ type: "list_reactions", bot_id: botId }, "reactions")
-      .then((reply) => {
-        if (alive) {
-          setReactions(reply.reactions);
-        }
-        return undefined;
-      })
-      .catch(() => undefined);
+    const load = (): void => {
+      client
+        .request({ type: "list_reactions", bot_id: botId }, "reactions")
+        .then((reply) => {
+          if (alive) {
+            setReactions(reply.reactions);
+          }
+          return undefined;
+        })
+        .catch(() => undefined);
+    };
+    load();
+    const timer = setInterval(load, REACTION_POLL_MS);
     return () => {
       alive = false;
+      clearInterval(timer);
     };
   }, [client, botId]);
-
-  const react = async (key: string, emoji: string | null): Promise<void> => {
-    const previous = reactions;
-    const next = { ...reactions };
-    if (emoji === null) {
-      delete next[key];
-    } else {
-      next[key] = emoji;
-    }
-    setReactions(next);
-    try {
-      const reply = await client.request(
-        emoji === null
-          ? { type: "set_reaction", bot_id: botId, key }
-          : { type: "set_reaction", bot_id: botId, key, emoji },
-        "reactions",
-      );
-      setReactions(reply.reactions);
-    } catch (error) {
-      setReactions(previous);
-      setSendError(`Reaction not saved: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  };
 
   const download = async (path: string): Promise<void> => {
     setSendError(null);
@@ -210,13 +195,6 @@ export default function ChatPane({ client, bot, canWrite }: ChatPaneProps): Reac
                   bot={bot}
                   onDownload={download}
                   reaction={reactions[item.at]}
-                  onReact={
-                    item.kind === "bot" && canWrite
-                      ? (emoji) => {
-                          void react(item.at, emoji);
-                        }
-                      : undefined
-                  }
                 />
               </div>
             );

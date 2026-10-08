@@ -105,7 +105,6 @@ impl Conn {
             "pause_tasks" => self.pause_tasks(&req_id, req),
             "save_profile" => self.save_profile(&req_id, req),
             "list_reactions" => self.list_reactions(&req_id, req),
-            "set_reaction" => self.set_reaction(&req_id, req),
             "save_group" => self.save_group(&req_id, req),
             "delete_group" => self.delete_group(&req_id, req),
             "create_bot" => self.create_bot(&req_id, req),
