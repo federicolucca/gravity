@@ -52,10 +52,16 @@ pub fn uploads_dir(gravity_home: &Path, bot_id: &str) -> PathBuf {
     gravity_home.join("uploads").join(bot_id)
 }
 
-/// Per-session arguments every Claude Code bot gets: Remote Control, and read
-/// access to the files the owner uploads for it (`ws::uploads`).
+/// Per-session arguments every Claude Code bot gets: Remote Control, the bus
+/// tools pre-approved, and read access to the files the owner uploads for it
+/// (`ws::uploads`).
+///
+/// The bus is how bots work together, so a send or a task completion must not
+/// stall on a permission prompt (or an auto-mode refusal) in an unattended pty;
+/// the daemon's own guardrails already bound what a bot can do with it.
 pub fn session_args(cfg: &Config, bot: &bus::Bot) -> Vec<String> {
     let mut args = remote_control_args(&bot.name).to_vec();
+    args.extend(["--allowedTools".to_string(), "mcp__gravity-bus".to_string()]);
     let uploads = uploads_dir(&cfg.home, &bot.id);
     if std::fs::create_dir_all(&uploads).is_ok() {
         let dir = uploads.display();
