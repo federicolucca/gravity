@@ -17,10 +17,20 @@ describe("NodeSettings", () => {
       <NodeSettings endpoint={LOCAL} onChangeEndpoint={vi.fn<(endpoint: Endpoint) => void>()} />,
     );
     expect(screen.getByText("(connected)")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Switch to 127.0.0.1" })).toHaveProperty(
-      "disabled",
-      true,
-    );
+    expect(screen.getByRole("button", { name: "Reconnect to 127.0.0.1" })).toBeTruthy();
+  });
+
+  it("applies a new token for the active daemon as soon as it is saved", () => {
+    const onChange = vi.fn<(endpoint: Endpoint) => void>();
+    const remote: Endpoint = { host: "192.168.1.3", port: 49777 };
+    render(<NodeSettings endpoint={remote} onChangeEndpoint={onChange} />);
+    fireEvent.change(screen.getByLabelText("Node host"), { target: { value: "192.168.1.3" } });
+    fireEvent.change(screen.getByLabelText("Node device token"), { target: { value: "tok" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(loadNodes()).toHaveLength(1);
+    expect(loadDeviceToken()).toBe("tok");
+    expect(onChange).toHaveBeenCalledWith(remote);
   });
 
   it("saves a node and switches to it with its device token", () => {

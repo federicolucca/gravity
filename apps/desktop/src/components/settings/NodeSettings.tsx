@@ -105,13 +105,12 @@ export default function NodeSettings(props: NodeSettingsProps): ReactElement {
                 <button
                   type="button"
                   className="btn btn-small"
-                  aria-label={`Switch to ${node.name}`}
-                  disabled={node.id === active?.id}
+                  aria-label={`${node.id === active?.id ? "Reconnect to" : "Switch to"} ${node.name}`}
                   onClick={() => {
                     connect(node);
                   }}
                 >
-                  Switch
+                  {node.id === active?.id ? "Reconnect" : "Switch"}
                 </button>
                 <button
                   type="button"
@@ -137,6 +136,10 @@ export default function NodeSettings(props: NodeSettingsProps): ReactElement {
             update(upsertNode(nodes, candidate));
             setDraft(EMPTY_DRAFT);
             setProbe("");
+            // A new credential for the daemon already in use applies at once.
+            if (findNode([candidate], endpoint) !== undefined) {
+              connect(candidate);
+            }
           }
         }}
       >
