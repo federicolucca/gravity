@@ -57,7 +57,11 @@ pub fn system_md(spec: &BotProvision<'_>) -> String {
          idle. `list_board_tasks`, `update_board_task` and\n\
          `delete_board_task` manage it. A prompt that starts with `[Task]`\n\
          came from that board: set it to `done` with `update_board_task`\n\
-         when you finish.\n\n\
+         when you finish, with a `comment` saying what was done. A task can\n\
+         name a `model` (auto, opus, sonnet, haiku); your session restarts\n\
+         onto it with the conversation kept, and returns afterwards. When new\n\
+         work reaches you while you are busy with something else, queue it\n\
+         with `add_board_task` and finish the current job first.\n\n\
          `complete_task` publishes your result to whoever delegated the task —\n\
          it, not `send_message`, is how you report back to another bot. While\n\
          the task is open you can also `send_message` that bot with kind\n\

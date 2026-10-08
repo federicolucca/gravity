@@ -81,7 +81,15 @@ impl Supervisor {
         }
         // Whatever model the bot was last talking with, it keeps talking with.
         let model = if bot.runtime == bus::BotRuntime::ClaudeCode {
-            self.pinned_model(bot_id, &workspace)
+            // A queued task can put the bot on another model for a while.
+            match crate::tasks::models::for_start(&self.inner.cfg.home, bot_id) {
+                crate::tasks::models::StartModel::Normal => self.pinned_model(bot_id, &workspace),
+                crate::tasks::models::StartModel::Override(model) => Some(model),
+                crate::tasks::models::StartModel::Restore(home) => {
+                    self.store_model(bot_id, home.as_deref());
+                    home
+                }
+            }
         } else {
             None
         };

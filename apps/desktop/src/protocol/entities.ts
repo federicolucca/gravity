@@ -77,6 +77,12 @@ export interface BotTask {
   readonly created_at: string;
   readonly started_at?: string;
   readonly done_at?: string;
+  /** "opus" | "sonnet" | "haiku"; absent means auto. */
+  readonly model?: string;
+  /** The model id the task was handed over with. */
+  readonly ran_with?: string;
+  /** What was done, written by the bot when it closed the task. */
+  readonly comment?: string;
 }
 
 /** The owner: the Claude account signed in on the daemon's machine, plus Gravity's own picks. */

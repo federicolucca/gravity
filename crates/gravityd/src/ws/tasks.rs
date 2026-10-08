@@ -3,7 +3,7 @@
 use serde_json::{json, Value};
 
 use super::Conn;
-use crate::tasks::{board_json, load, new_task, set_status, update, validate, Status};
+use crate::tasks::{board_json, load, models, new_task, set_status, update, validate, Status};
 
 impl Conn {
     fn send_board(&self, req_id: &Value, bot_id: &str) {
@@ -20,7 +20,7 @@ impl Conn {
         Ok(())
     }
 
-    /// `save_task {bot_id, task_id?, title, body}` → the board; no id adds to the todo column.
+    /// `save_task {bot_id, task_id?, title, body, model?}` → the board; no id adds to the todo column.
     pub(super) fn save_task(&self, req_id: &Value, req: &Value) -> anyhow::Result<()> {
         let bot_id = Self::str_field(req, "bot_id")?;
         anyhow::ensure!(self.app.db.get_bot(bot_id)?.is_some(), "bot not found");
@@ -28,6 +28,7 @@ impl Conn {
             Self::str_field(req, "title")?,
             req.get("body").and_then(Value::as_str).unwrap_or(""),
         )?;
+        let model = models::parse_choice(req.get("model").and_then(Value::as_str))?;
         let task_id = req.get("task_id").and_then(Value::as_str);
         update(&self.app.cfg.home, |boards| {
             match task_id {
@@ -39,8 +40,9 @@ impl Conn {
                         .ok_or_else(|| anyhow::anyhow!("task not found"))?;
                     task.title = title;
                     task.body = body;
+                    task.model = model;
                 }
-                None => boards.tasks.push(new_task(bot_id, title, body)),
+                None => boards.tasks.push(new_task(bot_id, title, body, model)),
             }
             Ok(())
         })?;

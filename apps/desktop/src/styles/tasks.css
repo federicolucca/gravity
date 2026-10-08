@@ -153,3 +153,8 @@
     grid-template-columns: 1fr;
   }
 }
+
+.task-card-comment {
+  border-left: 2px solid var(--accent);
+  padding-left: 8px;
+}

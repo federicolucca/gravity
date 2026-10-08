@@ -77,6 +77,7 @@ export default function TaskCard({
         ) : null}
       </div>
       {task.body === "" ? null : <p>{task.body}</p>}
+      {task.comment === undefined ? null : <p className="task-card-comment">{task.comment}</p>}
       {stamp === null ? null : <span className="task-card-when">{stamp}</span>}
     </div>
   );

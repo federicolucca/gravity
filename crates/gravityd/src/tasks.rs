@@ -19,6 +19,8 @@ use serde_json::{json, Value};
 
 use crate::app::AppState;
 
+pub mod models;
+
 const TASKS_FILE: &str = "tasks.json";
 const TICK: Duration = Duration::from_secs(3);
 /// Idle ticks in a row before the next task goes out, so a bot between two
@@ -55,6 +57,21 @@ pub struct Task {
     /// Whether the bot was seen working since the task went out.
     #[serde(default)]
     pub seen_working: bool,
+    /// "opus", "sonnet" or "haiku"; `None` is auto.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model: Option<String>,
+    /// The model id the task was handed over with.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ran_with: Option<String>,
+    /// In progress, but the bot is restarting onto `ran_with` first.
+    #[serde(default)]
+    pub awaiting_model: bool,
+    /// What was done, written by the bot when it closes the task.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub comment: Option<String>,
+    /// The bot went idle without closing the task and was asked for its report.
+    #[serde(default)]
+    pub nudged: bool,
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -122,7 +139,7 @@ pub fn validate(title: &str, body: &str) -> anyhow::Result<(String, String)> {
 }
 
 /// A new todo for `bot_id`.
-pub fn new_task(bot_id: &str, title: String, body: String) -> Task {
+pub fn new_task(bot_id: &str, title: String, body: String, model: Option<String>) -> Task {
     Task {
         id: uuid::Uuid::new_v4().to_string(),
         bot_id: bot_id.to_string(),
@@ -133,6 +150,11 @@ pub fn new_task(bot_id: &str, title: String, body: String) -> Task {
         started_at: None,
         done_at: None,
         seen_working: false,
+        model,
+        ran_with: None,
+        awaiting_model: false,
+        comment: None,
+        nudged: false,
     }
 }
 
@@ -147,6 +169,10 @@ pub fn set_status(task: &mut Task, to: Status) {
         Status::Todo => {
             task.started_at = None;
             task.done_at = None;
+            task.ran_with = None;
+            task.awaiting_model = false;
+            task.comment = None;
+            task.nudged = false;
         }
         // Marked in progress by hand: the queue waits for the bot to go idle
         // after work before calling it done.
@@ -169,7 +195,7 @@ pub fn prompt(task: &Task) -> String {
     }
     out.push_str(&format!(
         "\n\n(From your Tasks board, task_id {}. When it is finished, call \
-         update_board_task with status \"done\".)",
+         update_board_task with status \"done\" and a comment saying what was done.)",
         task.id
     ));
     out
@@ -182,6 +208,10 @@ enum Action {
     SeenWorking(String),
     Finish(String),
     Start(String),
+    /// The bot is back on the task's model: hand the task over now.
+    Send(String),
+    /// Idle without closing the task: ask once for the done comment.
+    Nudge(String),
 }
 
 fn secs_since(at: Option<&str>, now: chrono::DateTime<chrono::Utc>) -> i64 {
@@ -201,6 +231,14 @@ fn decide(
 ) -> Action {
     let mine = || boards.tasks.iter().filter(move |t| t.bot_id == bot_id);
     if let Some(task) = mine().find(|t| t.status == Status::Progress) {
+        if task.awaiting_model {
+            let ready = state == BotState::Ready && idle_ticks >= IDLE_TICKS;
+            return if ready {
+                Action::Send(task.id.clone())
+            } else {
+                Action::None
+            };
+        }
         return match state {
             BotState::Working | BotState::WaitingForApproval | BotState::WaitingForUser
                 if !task.seen_working =>
@@ -212,7 +250,11 @@ fn decide(
                     && (task.seen_working
                         || secs_since(task.started_at.as_deref(), now) >= UNSEEN_DONE_SECS) =>
             {
-                Action::Finish(task.id.clone())
+                if task.nudged {
+                    Action::Finish(task.id.clone())
+                } else {
+                    Action::Nudge(task.id.clone())
+                }
             }
             _ => Action::None,
         };
@@ -228,37 +270,109 @@ fn decide(
         .map_or(Action::None, |t| Action::Start(t.id.clone()))
 }
 
+/// What `apply` does once the board is saved.
+enum Effect {
+    None,
+    Send(Box<Task>),
+    Nudge(String),
+    Switch(&'static str),
+    Restore,
+}
+
 fn apply(app: &AppState, bot_id: &str, action: Action) -> anyhow::Result<()> {
     let now = chrono::Utc::now().to_rfc3339();
-    let started = update(&app.cfg.home, |boards| {
+    let active = models::active(&app.cfg.home, bot_id);
+    let current = match &active {
+        Some(o) => Some(o.model.clone()),
+        None => app.db.bot_model(bot_id)?,
+    };
+    let effect = update(&app.cfg.home, |boards| {
         let id = match &action {
-            Action::None => return Ok(None),
-            Action::SeenWorking(id) | Action::Finish(id) | Action::Start(id) => id,
+            Action::None => return Ok(Effect::None),
+            Action::SeenWorking(id)
+            | Action::Finish(id)
+            | Action::Start(id)
+            | Action::Send(id)
+            | Action::Nudge(id) => id.clone(),
         };
-        let Some(task) = boards.tasks.iter_mut().find(|t| &t.id == id) else {
-            return Ok(None);
+        let paused = boards.paused_bots.iter().any(|b| b == bot_id);
+        let next_todo = boards
+            .tasks
+            .iter()
+            .any(|t| t.bot_id == bot_id && t.status == Status::Todo && t.id != id);
+        let Some(task) = boards.tasks.iter_mut().find(|t| t.id == id) else {
+            return Ok(Effect::None);
         };
-        match action {
-            Action::SeenWorking(_) => task.seen_working = true,
+        Ok(match action {
+            Action::None => Effect::None,
+            Action::SeenWorking(_) => {
+                task.seen_working = true;
+                Effect::None
+            }
             Action::Finish(_) => {
                 task.status = Status::Done;
                 task.done_at = Some(now);
+                // The next task decides whether the override stays.
+                if active.is_some() && (paused || !next_todo) {
+                    Effect::Restore
+                } else {
+                    Effect::None
+                }
             }
-            Action::Start(_) => {
-                task.status = Status::Progress;
-                task.started_at = Some(now);
+            Action::Nudge(_) => {
+                task.nudged = true;
                 task.seen_working = false;
-                return Ok(Some(task.clone()));
+                task.started_at = Some(now);
+                Effect::Nudge(task.id.clone())
             }
-            Action::None => {}
-        }
-        Ok(None)
+            Action::Send(_) => {
+                task.awaiting_model = false;
+                task.started_at = Some(now);
+                Effect::Send(Box::new(task.clone()))
+            }
+            Action::Start(_) => match models::resolve(task) {
+                Some(target)
+                    if !current
+                        .as_deref()
+                        .is_some_and(|c| models::same_family(c, target)) =>
+                {
+                    task.status = Status::Progress;
+                    task.started_at = Some(now);
+                    task.seen_working = false;
+                    task.awaiting_model = true;
+                    task.ran_with = Some(target.to_string());
+                    Effect::Switch(target)
+                }
+                // Wants the bot's own model while a task override is in force.
+                None if active.is_some() => Effect::Restore,
+                target => {
+                    task.status = Status::Progress;
+                    task.started_at = Some(now);
+                    task.seen_working = false;
+                    task.ran_with = target.map(str::to_string).or_else(|| current.clone());
+                    Effect::Send(Box::new(task.clone()))
+                }
+            },
+        })
     })?;
-    if let Some(task) = started {
-        tracing::info!(bot_id, task_id = %task.id, "task handed to bot");
-        send_prompt(app, bot_id, &prompt(&task))?;
+    match effect {
+        Effect::None => Ok(()),
+        Effect::Send(task) => {
+            tracing::info!(bot_id, task_id = %task.id, model = ?task.ran_with, "task handed to bot");
+            send_prompt(app, bot_id, &prompt(&task))
+        }
+        Effect::Nudge(id) => send_prompt(
+            app,
+            bot_id,
+            &format!(
+                "(Tasks board: task_id {id} is still in progress. If it is finished, call \
+                 update_board_task with status \"done\" and a comment saying what was done; \
+                 otherwise carry on.)"
+            ),
+        ),
+        Effect::Switch(model) => models::switch(app, bot_id, model),
+        Effect::Restore => models::restore(app, bot_id),
     }
-    Ok(())
 }
 
 /// Types `text` into the bot's terminal and submits it, as the chat does.
@@ -328,6 +442,11 @@ mod tests {
             started_at: Some("2026-10-08T12:00:00Z".into()),
             done_at: None,
             seen_working: false,
+            model: None,
+            ran_with: None,
+            awaiting_model: false,
+            comment: None,
+            nudged: false,
         }
     }
 
@@ -379,11 +498,37 @@ mod tests {
         );
         assert_eq!(
             decide(&boards, "b", BotState::Ready, 2, at(10)),
+            Action::Nudge("a".into())
+        );
+        boards.tasks[0].nudged = true;
+        assert_eq!(
+            decide(&boards, "b", BotState::Ready, 2, at(10)),
             Action::Finish("a".into())
         );
         assert_eq!(
             decide(&boards, "b", BotState::Ready, 5, at(UNSEEN_DONE_SECS)),
             Action::Finish("a".into())
+        );
+    }
+
+    #[test]
+    fn a_task_waiting_for_its_model_is_sent_once_the_bot_is_back() {
+        let mut boards = Boards {
+            tasks: vec![task("a", Status::Progress)],
+            ..Default::default()
+        };
+        boards.tasks[0].awaiting_model = true;
+        assert_eq!(
+            decide(&boards, "b", BotState::Starting, 0, at(5)),
+            Action::None
+        );
+        assert_eq!(
+            decide(&boards, "b", BotState::Ready, 1, at(9)),
+            Action::None
+        );
+        assert_eq!(
+            decide(&boards, "b", BotState::Ready, 2, at(500)),
+            Action::Send("a".into())
         );
     }
 

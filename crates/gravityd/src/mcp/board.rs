@@ -8,7 +8,14 @@ use serde_json::{json, Value};
 
 use super::schema::tool;
 use crate::app::AppState;
-use crate::tasks::{board_json, load, new_task, set_status, update, validate, Status};
+use crate::tasks::{board_json, load, models, new_task, set_status, update, validate, Status};
+
+const MAX_COMMENT: usize = 4000;
+
+const MODEL_HINT: &str =
+    "Model to run it with. auto (default) lets the daemon pick: haiku or sonnet \
+    for simple work, opus for complex work. Your session restarts onto it (conversation kept) and \
+    comes back to your own model afterwards.";
 
 pub(super) fn board_tools() -> Vec<Value> {
     vec![
@@ -27,19 +34,23 @@ pub(super) fn board_tools() -> Vec<Value> {
             json!({
                 "title": {"type": "string", "description": "One line, up to 200 characters"},
                 "body": {"type": "string", "description": "Optional details: what to do and what done looks like"},
-                "first": {"type": "boolean", "description": "Put it at the top of the queue instead of the bottom"}
+                "first": {"type": "boolean", "description": "Put it at the top of the queue instead of the bottom"},
+                "model": {"type": "string", "enum": models::CHOICES, "description": MODEL_HINT}
             }),
             vec!["title"],
         ),
         tool(
             "update_board_task",
-            "Change one of your board tasks: its title, details or status. Set status \"done\" \
-              when you finish a task you were handed, so the next one follows.",
+            "Change one of your board tasks: its title, details, model or status. Set status \
+              \"done\" with a comment saying what was done when you finish a task you were handed, \
+              so the owner sees the outcome and the next task follows.",
             json!({
                 "task_id": {"type": "string"},
                 "title": {"type": "string"},
                 "body": {"type": "string"},
-                "status": {"type": "string", "enum": ["todo", "progress", "done"]}
+                "status": {"type": "string", "enum": ["todo", "progress", "done"]},
+                "comment": {"type": "string", "description": "What was done. Required when setting status done"},
+                "model": {"type": "string", "enum": models::CHOICES, "description": MODEL_HINT}
             }),
             vec!["task_id"],
         ),
@@ -70,7 +81,8 @@ pub(super) fn add_board_task(
         str_arg(args, "body").unwrap_or(""),
     )?;
     let first = args.get("first").and_then(Value::as_bool).unwrap_or(false);
-    let task = new_task(bot_id, title, body);
+    let model = models::parse_choice(str_arg(args, "model"))?;
+    let task = new_task(bot_id, title, body, model);
     let out = json!({ "task_id": task.id, "status": "todo" });
     update(&app.cfg.home, |boards| {
         let at = if first {
@@ -94,6 +106,16 @@ pub(super) fn update_board_task(
 ) -> anyhow::Result<Value> {
     let task_id = str_arg(args, "task_id").ok_or_else(|| anyhow::anyhow!("task_id is required"))?;
     let status = str_arg(args, "status").map(Status::parse).transpose()?;
+    let comment = str_arg(args, "comment")
+        .map(str::trim)
+        .filter(|c| !c.is_empty());
+    if comment.is_some_and(|c| c.chars().count() > MAX_COMMENT) {
+        anyhow::bail!("comment is limited to {MAX_COMMENT} characters");
+    }
+    let model = args
+        .get("model")
+        .map(|_| models::parse_choice(str_arg(args, "model")))
+        .transpose()?;
     update(&app.cfg.home, |boards| {
         let task = boards
             .tasks
@@ -107,6 +129,15 @@ pub(super) fn update_board_task(
             )?;
             task.title = title;
             task.body = body;
+        }
+        if let Some(model) = model {
+            task.model = model;
+        }
+        if let Some(comment) = comment {
+            task.comment = Some(comment.to_string());
+        }
+        if status == Some(Status::Done) && task.comment.is_none() {
+            anyhow::bail!("say what was done: pass a comment when setting status done");
         }
         if let Some(status) = status {
             set_status(task, status);
