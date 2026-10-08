@@ -1,7 +1,8 @@
 import type { DaemonApi } from "../../protocol/api";
 
 /** An absolute path with a file extension, standing alone or in backticks/quotes. */
-const PATH_RE = /(?:^|[\s`'"(])(\/(?:[\w.@+-]+\/)+[\w.@+-]*\.[A-Za-z0-9]{1,8})(?=$|[\s`'"),:;]|\.(?:$|\s))/g;
+const PATH_RE =
+  /(?:^|[\s`'"(])(\/(?:[\w.@+-]+\/)+[\w.@+-]*\.[A-Za-z0-9]{1,8})(?=$|[\s`'"),:;]|\.(?:$|\s))/g;
 
 /** Most file chips one reply offers. */
 const MAX_FILES = 8;

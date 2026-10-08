@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { byRecency } from "./recency";
 import type { ReactElement } from "react";
 import type { Bot, Project } from "../../protocol/entities";
 import BotRow from "./BotRow";
@@ -35,7 +36,10 @@ export default function ProjectSection(props: ProjectSectionProps): ReactElement
   const pinnedBots = pinnedBotIds
     .map((id) => bots.find((bot) => bot.id === id))
     .filter((bot): bot is Bot => bot !== undefined);
-  const unpinnedBots = bots.filter((bot) => !pinnedBotIds.includes(bot.id));
+  const unpinnedBots = byRecency(
+    bots.filter((bot) => !pinnedBotIds.includes(bot.id)),
+    props.activityByBot,
+  );
   const selectedBotId = selection.kind === "bot" ? selection.botId : null;
 
   return (

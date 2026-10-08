@@ -1,5 +1,6 @@
 import type { ReactElement, ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import CopyBlock from "./CopyBlock";
 
 interface MarkdownProps {
@@ -18,6 +19,12 @@ interface MarkdownProps {
  */
 const COMPONENTS = {
   pre: ({ children }: { children?: ReactNode }) => <CopyBlock>{children}</CopyBlock>,
+  // Wide tables scroll inside the bubble instead of stretching it.
+  table: ({ children }: { children?: ReactNode }) => (
+    <div className="markdown-table">
+      <table>{children}</table>
+    </div>
+  ),
   a: ({ children, href }: { children?: ReactNode; href?: string }) => (
     <span className="markdown-link" title={href}>
       {children}
@@ -29,6 +36,9 @@ const COMPONENTS = {
     </span>
   ),
 };
+
+/** GitHub-flavoured Markdown: tables, strikethrough, task lists. No raw HTML. */
+const REMARK_PLUGINS = [remarkGfm];
 
 /**
  * Markdown written by a bot.
@@ -43,7 +53,9 @@ const COMPONENTS = {
 export default function Markdown({ children }: MarkdownProps): ReactElement {
   return (
     <div className="markdown">
-      <ReactMarkdown components={COMPONENTS}>{children}</ReactMarkdown>
+      <ReactMarkdown remarkPlugins={REMARK_PLUGINS} components={COMPONENTS}>
+        {children}
+      </ReactMarkdown>
     </div>
   );
 }

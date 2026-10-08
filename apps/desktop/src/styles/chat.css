@@ -385,3 +385,27 @@
     transform: rotate(360deg);
   }
 }
+
+.markdown-table {
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 8px 0;
+}
+
+.markdown-table table {
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.markdown-table th,
+.markdown-table td {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.markdown-table th {
+  background: var(--bg-raised);
+  font-weight: 600;
+}
