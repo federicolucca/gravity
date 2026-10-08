@@ -3,11 +3,13 @@ import { useState } from "react";
 import type { ReactElement } from "react";
 import type { ChatItem } from "../../protocol/entities";
 import Markdown from "../control/Markdown";
+import FileDownloads from "./FileDownloads";
 import { baseName, splitAttachments } from "./uploads";
 
 interface ChatItemViewProps {
   readonly item: ChatItem;
   readonly botName: string;
+  readonly onDownload: (path: string) => Promise<void>;
 }
 
 function plural(count: number, word: string): string {
@@ -92,7 +94,11 @@ function UserMessage({ text }: { readonly text: string }): ReactElement {
   );
 }
 
-export default function ChatItemView({ item, botName }: ChatItemViewProps): ReactElement {
+export default function ChatItemView({
+  item,
+  botName,
+  onDownload,
+}: ChatItemViewProps): ReactElement {
   switch (item.kind) {
     case "steps":
       return <Steps item={item} />;
@@ -103,10 +109,11 @@ export default function ChatItemView({ item, botName }: ChatItemViewProps): Reac
       return <UserMessage text={item.text ?? ""} />;
     case "bot":
       return (
-        <div className="chat-row chat-row-bot" aria-label={`${botName} said`}>
+        <div className="chat-row chat-row-bot chat-row-stack-bot" aria-label={`${botName} said`}>
           <div className="chat-bubble chat-bubble-bot">
             <Markdown>{item.text ?? ""}</Markdown>
           </div>
+          <FileDownloads text={item.text ?? ""} onDownload={onDownload} />
         </div>
       );
   }

@@ -5,6 +5,7 @@ import type { Bot, ChatItem } from "../../protocol/entities";
 import ChatComposer from "./ChatComposer";
 import ChatItemView from "./ChatItemView";
 import { dayLabel, needsTimeGap } from "./chatTime";
+import { downloadFile } from "./downloads";
 import { promptWithAttachments, uploadFile } from "./uploads";
 
 interface ChatPaneProps {
@@ -97,6 +98,15 @@ export default function ChatPane({ client, bot, canWrite }: ChatPaneProps): Reac
 
   const [sendError, setSendError] = useState<string | null>(null);
 
+  const download = async (path: string): Promise<void> => {
+    setSendError(null);
+    try {
+      await downloadFile(client, botId, path);
+    } catch (error) {
+      setSendError(`Download failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  };
+
   const send = async (text: string, files: readonly File[]): Promise<void> => {
     setSendError(null);
     let paths: string[];
@@ -138,7 +148,7 @@ export default function ChatPane({ client, bot, canWrite }: ChatPaneProps): Reac
                 {needsTimeGap(previous?.at, item.at) ? (
                   <div className="chat-time">{dayLabel(item.at)}</div>
                 ) : null}
-                <ChatItemView item={item} botName={bot.name} />
+                <ChatItemView item={item} botName={bot.name} onDownload={download} />
               </div>
             );
           })}

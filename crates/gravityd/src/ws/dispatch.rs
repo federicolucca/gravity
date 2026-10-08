@@ -87,6 +87,7 @@ impl Conn {
             "get_chat" => self.get_chat(&req_id, req),
             "list_bot_actions" => self.list_bot_actions(&req_id, req),
             "upload_file" => self.upload_file(&req_id, req),
+            "download_file" => self.download_file(&req_id, req),
             "create_bot" => self.create_bot(&req_id, req),
             "update_bot" => self.update_bot(&req_id, req),
             "set_bot_runtime" => self.set_bot_runtime(&req_id, req),

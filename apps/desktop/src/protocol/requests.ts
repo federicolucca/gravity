@@ -88,6 +88,12 @@ export type ClientRequestBody =
     }
   | { readonly type: "list_bot_activity"; readonly project_id?: string }
   | { readonly type: "list_bot_actions"; readonly project_id?: string }
+  | {
+      readonly type: "download_file";
+      readonly bot_id: string;
+      readonly path: string;
+      readonly offset?: number;
+    }
   | { readonly type: "get_chat"; readonly bot_id: string; readonly limit?: number }
   | {
       readonly type: "upload_file";

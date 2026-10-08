@@ -21,6 +21,7 @@ mod admin;
 mod decisions;
 mod decisions_publish;
 mod dispatch;
+mod downloads;
 mod entities;
 mod messaging;
 mod peers;

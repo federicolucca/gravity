@@ -68,6 +68,15 @@ export type ServerReply =
       readonly actions: Readonly<Record<string, string>>;
     })
   | (ReplyBase & {
+      readonly type: "downloaded";
+      /** Base64 chunk starting at the requested offset. */
+      readonly data: string;
+      /** Where the next chunk starts. */
+      readonly offset: number;
+      readonly size: number;
+      readonly done: boolean;
+    })
+  | (ReplyBase & {
       readonly type: "uploaded";
       readonly file: string;
       readonly path: string;

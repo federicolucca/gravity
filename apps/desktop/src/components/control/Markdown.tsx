@@ -1,5 +1,6 @@
 import type { ReactElement, ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
+import CopyBlock from "./CopyBlock";
 
 interface MarkdownProps {
   readonly children: string;
@@ -16,6 +17,7 @@ interface MarkdownProps {
  * sets no CSP.
  */
 const COMPONENTS = {
+  pre: ({ children }: { children?: ReactNode }) => <CopyBlock>{children}</CopyBlock>,
   a: ({ children, href }: { children?: ReactNode; href?: string }) => (
     <span className="markdown-link" title={href}>
       {children}
