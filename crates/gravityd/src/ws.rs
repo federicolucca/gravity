@@ -27,6 +27,7 @@ mod peers;
 mod routines;
 mod runtime;
 mod terminal;
+mod uploads;
 mod views;
 
 pub(crate) use views::{bot_view, project_view};

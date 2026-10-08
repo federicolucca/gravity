@@ -47,6 +47,28 @@ pub fn remote_control_args(bot_name: &str) -> [String; 2] {
     ["--remote-control".to_string(), bot_name.to_string()]
 }
 
+/// Where the files the owner uploads for a bot are kept.
+pub fn uploads_dir(gravity_home: &Path, bot_id: &str) -> PathBuf {
+    gravity_home.join("uploads").join(bot_id)
+}
+
+/// Per-session arguments every Claude Code bot gets: Remote Control, and read
+/// access to the files the owner uploads for it (`ws::uploads`).
+pub fn session_args(cfg: &Config, bot: &bus::Bot) -> Vec<String> {
+    let mut args = remote_control_args(&bot.name).to_vec();
+    let uploads = uploads_dir(&cfg.home, &bot.id);
+    if std::fs::create_dir_all(&uploads).is_ok() {
+        let dir = uploads.display();
+        args.extend([
+            "--add-dir".to_string(),
+            dir.to_string(),
+            "--allowedTools".to_string(),
+            format!("Read({dir}/**)"),
+        ]);
+    }
+    args
+}
+
 /// How to launch a bot whose runtime runs in an external directory.
 pub struct ExternalLaunch {
     pub dir: PathBuf,

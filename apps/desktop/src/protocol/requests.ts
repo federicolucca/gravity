@@ -88,6 +88,15 @@ export type ClientRequestBody =
     }
   | { readonly type: "list_bot_activity"; readonly project_id?: string }
   | { readonly type: "get_chat"; readonly bot_id: string; readonly limit?: number }
+  | {
+      readonly type: "upload_file";
+      readonly bot_id: string;
+      readonly name: string;
+      /** Base64 chunk; a frame is capped at 1 MiB, so files go in pieces. */
+      readonly data: string;
+      /** The `file` an earlier chunk returned, to append to it. */
+      readonly file?: string;
+    }
   | { readonly type: "list_conversations"; readonly project_id?: string }
   | { readonly type: "list_routines"; readonly bot_id: string }
   | {

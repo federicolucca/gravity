@@ -63,6 +63,11 @@ export type ServerReply =
       readonly activity: readonly BotActivity[];
     })
   | (ReplyBase & {
+      readonly type: "uploaded";
+      readonly file: string;
+      readonly path: string;
+    })
+  | (ReplyBase & {
       readonly type: "chat";
       readonly bot_id: string;
       readonly items: readonly ChatItem[];

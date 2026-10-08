@@ -1,8 +1,9 @@
-import { ArrowDownLeft, ArrowUpRight, ChevronRight } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, ChevronRight, Paperclip } from "lucide-react";
 import { useState } from "react";
 import type { ReactElement } from "react";
 import type { ChatItem } from "../../protocol/entities";
 import Markdown from "../control/Markdown";
+import { baseName, splitAttachments } from "./uploads";
 
 interface ChatItemViewProps {
   readonly item: ChatItem;
@@ -71,6 +72,26 @@ function BusNote({ item }: { readonly item: ChatItem }): ReactElement {
   );
 }
 
+/** The owner's prompt; uploaded files show as chips above the bubble. */
+function UserMessage({ text }: { readonly text: string }): ReactElement {
+  const { body, files } = splitAttachments(text);
+  return (
+    <div className="chat-row chat-row-user chat-row-stack">
+      {files.length > 0 ? (
+        <ul className="chat-files">
+          {files.map((path) => (
+            <li key={path} className="chat-file" title={path}>
+              <Paperclip size={13} strokeWidth={2} aria-hidden="true" />
+              <span>{baseName(path)}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {body !== "" ? <div className="chat-bubble chat-bubble-user">{body}</div> : null}
+    </div>
+  );
+}
+
 export default function ChatItemView({ item, botName }: ChatItemViewProps): ReactElement {
   switch (item.kind) {
     case "steps":
@@ -79,11 +100,7 @@ export default function ChatItemView({ item, botName }: ChatItemViewProps): Reac
     case "bus_out":
       return <BusNote item={item} />;
     case "user":
-      return (
-        <div className="chat-row chat-row-user">
-          <div className="chat-bubble chat-bubble-user">{item.text}</div>
-        </div>
-      );
+      return <UserMessage text={item.text ?? ""} />;
     case "bot":
       return (
         <div className="chat-row chat-row-bot" aria-label={`${botName} said`}>

@@ -75,7 +75,7 @@ impl Supervisor {
         let resume = bot.runtime == bus::BotRuntime::ClaudeCode && self.wants_resume(bot_id);
         let mut claude_args = self.inner.cfg.claude_args.clone();
         claude_args.extend(external.iter().flat_map(|e| e.args.clone()));
-        claude_args.extend(crate::paths::external::remote_control_args(&bot.name));
+        claude_args.extend(crate::paths::external::session_args(&self.inner.cfg, &bot));
         if resume {
             claude_args.push("--continue".to_string());
         }

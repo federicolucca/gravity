@@ -5,6 +5,7 @@ import type { Bot, ChatItem } from "../../protocol/entities";
 import ChatComposer from "./ChatComposer";
 import ChatItemView from "./ChatItemView";
 import { dayLabel, needsTimeGap } from "./chatTime";
+import { promptWithAttachments, uploadFile } from "./uploads";
 
 interface ChatPaneProps {
   readonly client: DaemonApi;
@@ -83,11 +84,22 @@ export default function ChatPane({ client, bot, canWrite }: ChatPaneProps): Reac
     }
   };
 
-  const send = (text: string): void => {
+  const [sendError, setSendError] = useState<string | null>(null);
+
+  const send = async (text: string, files: readonly File[]): Promise<void> => {
+    setSendError(null);
+    let paths: string[];
+    try {
+      paths = await Promise.all(files.map((file) => uploadFile(client, botId, file)));
+    } catch (error) {
+      setSendError(`Upload failed: ${error instanceof Error ? error.message : String(error)}`);
+      throw error;
+    }
     pinnedRef.current = true;
+    const prompt = promptWithAttachments(text, paths);
     // Bracketed paste keeps a multi-line prompt as one message; the Enter
     // after it is what submits, exactly as when the owner types it.
-    client.fire({ type: "input", bot_id: botId, data: `\u001b[200~${text}\u001b[201~` });
+    client.fire({ type: "input", bot_id: botId, data: `\u001b[200~${prompt}\u001b[201~` });
     window.setTimeout(() => {
       client.fire({ type: "input", bot_id: botId, data: "\r" });
     }, 120);
@@ -115,6 +127,7 @@ export default function ChatPane({ client, bot, canWrite }: ChatPaneProps): Reac
           {working ? <div className="chat-typing" aria-label={`${bot.name} is working`} /> : null}
         </div>
       </div>
+      {sendError !== null ? <p className="chat-error">{sendError}</p> : null}
       <ChatComposer botName={bot.name} disabled={!canWrite} onSend={send} />
     </div>
   );
