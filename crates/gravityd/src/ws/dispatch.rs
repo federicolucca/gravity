@@ -99,6 +99,7 @@ impl Conn {
             "get_profile" => self.get_profile(&req_id, req),
             "list_tasks" => self.list_tasks(&req_id, req),
             "save_task" => self.save_task(&req_id, req),
+            "send_chat" => self.send_chat(&req_id, req),
             "move_task" => self.move_task(&req_id, req),
             "delete_task" => self.delete_task(&req_id, req),
             "pause_tasks" => self.pause_tasks(&req_id, req),

@@ -87,6 +87,13 @@ export type ServerReply =
     })
   | (ReplyBase & { readonly type: "process_stopped"; readonly pid: number })
   | (ReplyBase & {
+      readonly type: "chat_model";
+      /** True when the message waits for the bot to restart onto `model`. */
+      readonly switched: boolean;
+      readonly model?: string;
+      readonly reason?: string;
+    })
+  | (ReplyBase & {
       readonly type: "tasks";
       readonly bot_id: string;
       readonly tasks: readonly BotTask[];

@@ -3,7 +3,11 @@
 use serde_json::{json, Value};
 
 use super::Conn;
-use crate::tasks::{board_json, load, models, new_task, set_status, update, validate, Status};
+use crate::tasks::{
+    board_json, chat_task, load, models, new_task, send_prompt, set_status, update, validate,
+    Status,
+};
+use bus::BotState;
 
 impl Conn {
     fn send_board(&self, req_id: &Value, bot_id: &str) {
@@ -47,6 +51,52 @@ impl Conn {
             Ok(())
         })?;
         self.send_board(req_id, bot_id);
+        Ok(())
+    }
+
+    /// `send_chat {bot_id, text, model}` → `{type:"chat_model", switched, model?, reason?}`.
+    ///
+    /// A chat message with a model of its own. Idle and on another model: the
+    /// message waits on the bot's queue while it restarts onto the model, and
+    /// goes back afterwards. Busy, or already on that model: typed straight in.
+    pub(super) fn send_chat(&self, req_id: &Value, req: &Value) -> anyhow::Result<()> {
+        let bot_id = Self::str_field(req, "bot_id")?;
+        let text = Self::str_field(req, "text")?;
+        anyhow::ensure!(!text.trim().is_empty(), "text is empty");
+        anyhow::ensure!(self.app.db.get_bot(bot_id)?.is_some(), "bot not found");
+        let choice = models::parse_choice(req.get("model").and_then(Value::as_str))?;
+        let task = chat_task(bot_id, text, choice);
+        let target = models::resolve(&task);
+        let current = match models::active(&self.app.cfg.home, bot_id) {
+            Some(o) => Some(o.model),
+            None => self.app.db.bot_model(bot_id)?,
+        };
+        let same = match (target, current.as_deref()) {
+            (None, _) => true,
+            (Some(t), Some(c)) => models::same_family(c, t),
+            (Some(_), None) => false,
+        };
+        let idle = self.app.supervisor.state(bot_id).0 == BotState::Ready;
+        if same || !idle {
+            send_prompt(&self.app, bot_id, text)?;
+            let reason = if same {
+                "already on that model"
+            } else {
+                "bot is busy: sent with its current model"
+            };
+            self.send(json!({
+                "type": "chat_model", "req_id": req_id, "switched": false,
+                "model": target, "reason": reason,
+            }));
+            return Ok(());
+        }
+        update(&self.app.cfg.home, |boards| {
+            boards.tasks.insert(0, task);
+            Ok(())
+        })?;
+        self.send(json!({
+            "type": "chat_model", "req_id": req_id, "switched": true, "model": target,
+        }));
         Ok(())
     }
 

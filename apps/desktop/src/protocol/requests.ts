@@ -104,6 +104,12 @@ export type ClientRequestBody =
       readonly model: TaskModel;
     }
   | {
+      readonly type: "send_chat";
+      readonly bot_id: string;
+      readonly text: string;
+      readonly model: TaskModel;
+    }
+  | {
       readonly type: "move_task";
       readonly bot_id: string;
       readonly task_id: string;

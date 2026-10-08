@@ -1,12 +1,16 @@
 import { ArrowUp, Paperclip, Plus, X } from "lucide-react";
 import { useRef, useState } from "react";
 import type { ClipboardEvent, DragEvent, KeyboardEvent, ReactElement } from "react";
+import type { ChatModel } from "./chatModel";
+import { CHAT_MODELS } from "./chatModel";
 
 interface ChatComposerProps {
   readonly botName: string;
   readonly disabled: boolean;
   /** Resolves once the message (and its files) went out; rejects to keep the draft. */
-  readonly onSend: (text: string, files: readonly File[]) => Promise<void>;
+  readonly onSend: (text: string, files: readonly File[], model: ChatModel) => Promise<void>;
+  /** Offer a per-message model; off in groups. */
+  readonly modelPicker?: boolean;
 }
 
 /** Enter sends, Shift+Enter breaks the line; files come from "+", paste or drop. */
@@ -14,8 +18,10 @@ export default function ChatComposer({
   botName,
   disabled,
   onSend,
+  modelPicker = false,
 }: ChatComposerProps): ReactElement {
   const [draft, setDraft] = useState("");
+  const [model, setModel] = useState<ChatModel>("bot");
   const [files, setFiles] = useState<readonly File[]>([]);
   const [sending, setSending] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -37,7 +43,7 @@ export default function ChatComposer({
     }
     setSending(true);
     try {
-      await onSend(text, files);
+      await onSend(text, files, model);
       setDraft("");
       setFiles([]);
     } catch {
@@ -136,6 +142,24 @@ export default function ChatComposer({
           onKeyDown={onKeyDown}
           onPaste={onPaste}
         />
+        {modelPicker ? (
+          <select
+            className="chat-model"
+            aria-label="Model for this message"
+            title="Bot: its own model. Auto: Haiku, Sonnet or Opus from the message. Switching restarts the bot (conversation kept) and comes back after the answer."
+            value={model}
+            disabled={blocked}
+            onChange={(event) => {
+              setModel(event.target.value as ChatModel);
+            }}
+          >
+            {CHAT_MODELS.map((choice) => (
+              <option key={choice.value} value={choice.value}>
+                {choice.label}
+              </option>
+            ))}
+          </select>
+        ) : null}
         <button
           type="button"
           className="chat-send"

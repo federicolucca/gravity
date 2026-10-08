@@ -535,3 +535,15 @@
   background: var(--bubble-user);
   color: var(--bubble-user-text);
 }
+
+.chat-model {
+  flex: none;
+  align-self: center;
+  max-width: 96px;
+  font-size: 12px;
+  color: var(--text-dim);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 3px 4px;
+}

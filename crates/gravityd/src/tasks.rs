@@ -72,6 +72,10 @@ pub struct Task {
     /// The bot went idle without closing the task and was asked for its report.
     #[serde(default)]
     pub nudged: bool,
+    /// A chat message sent with a model of its own: the body is typed as is,
+    /// it jumps the queue, stays off the board and is dropped once answered.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub chat: bool,
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -155,7 +159,15 @@ pub fn new_task(bot_id: &str, title: String, body: String, model: Option<String>
         awaiting_model: false,
         comment: None,
         nudged: false,
+        chat: false,
     }
+}
+
+/// A chat message that has to wait for the bot to switch model.
+pub fn chat_task(bot_id: &str, text: &str, model: Option<String>) -> Task {
+    let mut task = new_task(bot_id, "Chat message".to_string(), text.to_string(), model);
+    task.chat = true;
+    task
 }
 
 /// Moves a task to another column, keeping its timestamps consistent. Moving
@@ -188,6 +200,9 @@ pub fn set_status(task: &mut Task, to: Status) {
 
 /// The prompt a task becomes in the bot's terminal.
 pub fn prompt(task: &Task) -> String {
+    if task.chat {
+        return task.body.clone();
+    }
     let mut out = format!("[Task] {}", task.title);
     if !task.body.is_empty() {
         out.push_str("\n\n");
@@ -250,7 +265,7 @@ fn decide(
                     && (task.seen_working
                         || secs_since(task.started_at.as_deref(), now) >= UNSEEN_DONE_SECS) =>
             {
-                if task.nudged {
+                if task.nudged || task.chat {
                     Action::Finish(task.id.clone())
                 } else {
                     Action::Nudge(task.id.clone())
@@ -259,10 +274,14 @@ fn decide(
             _ => Action::None,
         };
     }
-    if state != BotState::Ready
-        || idle_ticks < IDLE_TICKS
-        || boards.paused_bots.iter().any(|id| id == bot_id)
-    {
+    if state != BotState::Ready || idle_ticks < IDLE_TICKS {
+        return Action::None;
+    }
+    // A waiting chat message goes first, paused board or not.
+    if let Some(chat) = mine().find(|t| t.chat && t.status == Status::Todo) {
+        return Action::Start(chat.id.clone());
+    }
+    if boards.paused_bots.iter().any(|id| id == bot_id) {
         return Action::None;
     }
     mine()
@@ -303,7 +322,7 @@ fn apply(app: &AppState, bot_id: &str, action: Action) -> anyhow::Result<()> {
         let Some(task) = boards.tasks.iter_mut().find(|t| t.id == id) else {
             return Ok(Effect::None);
         };
-        Ok(match action {
+        let effect = match action {
             Action::None => Effect::None,
             Action::SeenWorking(_) => {
                 task.seen_working = true;
@@ -353,7 +372,11 @@ fn apply(app: &AppState, bot_id: &str, action: Action) -> anyhow::Result<()> {
                     Effect::Send(Box::new(task.clone()))
                 }
             },
-        })
+        };
+        boards
+            .tasks
+            .retain(|t| !(t.chat && t.status == Status::Done));
+        Ok(effect)
     })?;
     match effect {
         Effect::None => Ok(()),
@@ -376,7 +399,7 @@ fn apply(app: &AppState, bot_id: &str, action: Action) -> anyhow::Result<()> {
 }
 
 /// Types `text` into the bot's terminal and submits it, as the chat does.
-fn send_prompt(app: &AppState, bot_id: &str, text: &str) -> anyhow::Result<()> {
+pub fn send_prompt(app: &AppState, bot_id: &str, text: &str) -> anyhow::Result<()> {
     app.supervisor
         .input(bot_id, format!("\u{1b}[200~{text}\u{1b}[201~").as_bytes())?;
     std::thread::sleep(Duration::from_millis(150));
@@ -420,7 +443,11 @@ pub async fn watch(app: Arc<AppState>) {
 
 /// The board as the client shows it.
 pub fn board_json(boards: &Boards, bot_id: &str) -> Value {
-    let tasks: Vec<&Task> = boards.tasks.iter().filter(|t| t.bot_id == bot_id).collect();
+    let tasks: Vec<&Task> = boards
+        .tasks
+        .iter()
+        .filter(|t| t.bot_id == bot_id && !t.chat)
+        .collect();
     json!({
         "tasks": tasks,
         "paused": boards.paused_bots.iter().any(|id| id == bot_id),
@@ -447,6 +474,7 @@ mod tests {
             awaiting_model: false,
             comment: None,
             nudged: false,
+            chat: false,
         }
     }
 
@@ -530,6 +558,30 @@ mod tests {
             decide(&boards, "b", BotState::Ready, 2, at(500)),
             Action::Send("a".into())
         );
+    }
+
+    #[test]
+    fn a_chat_message_jumps_the_queue_and_skips_the_nudge() {
+        let mut boards = Boards {
+            tasks: vec![task("a", Status::Todo), task("c", Status::Todo)],
+            paused_bots: vec!["b".into()],
+        };
+        boards.tasks[1].chat = true;
+        assert_eq!(
+            decide(&boards, "b", BotState::Ready, 2, at(0)),
+            Action::Start("c".into())
+        );
+        boards.tasks[1].status = Status::Progress;
+        boards.tasks[1].seen_working = true;
+        assert_eq!(
+            decide(&boards, "b", BotState::Ready, 2, at(10)),
+            Action::Finish("c".into())
+        );
+        assert!(board_json(&boards, "b")["tasks"]
+            .as_array()
+            .is_some_and(|tasks| tasks.len() == 1));
+        boards.tasks[1].body = "hello".into();
+        assert_eq!(prompt(&boards.tasks[1]), "hello");
     }
 
     #[test]
