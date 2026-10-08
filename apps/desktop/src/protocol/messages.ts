@@ -6,6 +6,7 @@ import type {
   BotActivity,
   BotGroup,
   MachineStats,
+  OwnerProfile,
   ChatItem,
   BotRevision,
   BotState,
@@ -83,6 +84,8 @@ export type ServerReply =
       /** Reply timestamp to the owner's emoji. */
       readonly reactions: Readonly<Record<string, string>>;
     })
+  | (ReplyBase & { readonly type: "process_stopped"; readonly pid: number })
+  | (ReplyBase & { readonly type: "profile" } & OwnerProfile)
   | (ReplyBase & { readonly type: "machine_stats"; readonly stats: MachineStats })
   | (ReplyBase & { readonly type: "groups"; readonly groups: readonly BotGroup[] })
   | (ReplyBase & { readonly type: "group_saved"; readonly group: BotGroup })

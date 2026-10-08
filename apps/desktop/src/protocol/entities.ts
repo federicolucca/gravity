@@ -65,6 +65,30 @@ interface ChatStep {
  * One item of a bot's conversation as a chat, read from its transcript:
  * an owner prompt, a bot reply, bus traffic, or a folded run of tool calls.
  */
+/** The owner: the Claude account signed in on the daemon's machine, plus Gravity's own picks. */
+export interface OwnerProfile {
+  /** `oauthAccount` fields from `~/.claude.json` (camelCase, as Claude Code stores them). */
+  readonly claude: {
+    readonly displayName?: string;
+    readonly fullName?: string;
+    readonly emailAddress?: string;
+    readonly organizationName?: string;
+    readonly organizationRole?: string;
+    readonly organizationType?: string;
+    readonly billingType?: string;
+    readonly seatTier?: string;
+    readonly userRateLimitTier?: string;
+    readonly accountCreatedAt?: string;
+    readonly subscriptionCreatedAt?: string;
+    readonly claudeCodeFirstTokenDate?: string;
+    readonly numStartups?: number;
+  };
+  /** Empty means "use the Claude display name". */
+  readonly display_name: string;
+  /** `icon:<name>`, or empty for initials. */
+  readonly avatar: string;
+}
+
 /** Live stats of the daemon's machine (`machine_stats`). Bytes, percents, °C. */
 export interface MachineStats {
   readonly hostname: string;

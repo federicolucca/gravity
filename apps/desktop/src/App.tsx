@@ -4,6 +4,8 @@ import type { ReactElement } from "react";
 import { useDaemonActions } from "./app/useDaemonActions";
 import { useFirstRunSetup } from "./app/useFirstRunSetup";
 import { useGroups } from "./app/useGroups";
+import { ProfileContext } from "./app/profile";
+import { useOwnerProfile } from "./app/useOwnerProfile";
 import type { FirstRunSetup } from "./app/useFirstRunSetup";
 import { useBotActions } from "./app/useBotActions";
 import { useDaemonState } from "./app/useDaemonState";
@@ -96,6 +98,7 @@ export default function App(): ReactElement {
   const { select, bots, canControl, connected } = daemon;
   const actionByBot = useBotActions(client, bots);
   const groups = useGroups(client, connected, bots, select, addToast);
+  const profile = useOwnerProfile(client, connected);
   const [machineOpen, setMachineOpen] = useState(false);
   const openMachine = useCallback((): void => {
     setMachineOpen(true);
@@ -150,81 +153,83 @@ export default function App(): ReactElement {
 
   return (
     <SetupGate setup={setup} toasts={toasts} onDismissToast={dismissToast}>
-      <div className={daemon.selection.kind === "none" ? "app" : "app app-open"}>
-        <Sidebar
-          status={daemon.status}
-          endpoint={daemon.endpoint}
-          projects={daemon.projects}
-          bots={bots}
-          unreadBots={daemon.unreadBots}
-          failedByBot={failedByBot}
-          nextRun={daemon.nextRun}
-          activityByBot={daemon.activityByBot}
-          actionByBot={actionByBot}
-          groups={groups.groups}
-          onNewGroup={groups.openNew}
-          onOpenMachine={openMachine}
-          pendingDecisions={pending}
-          selection={daemon.selection}
-          canControl={canControl}
-          onSelect={select}
-          onOpenSearch={overlays.openBlankSearch}
-          onCreateProject={actions.createProject}
-          onCreateBot={actions.createBot}
-          onDeleteBot={actions.deleteBot}
-          onDeleteProject={actions.deleteProject}
-          onOpenSettings={overlays.openSettings}
-        />
-        <main className="main">
-          {/* Narrow screens show the list or one view; this goes back to the list. */}
-          {daemon.selection.kind === "none" ? null : (
-            <button
-              type="button"
-              className="mobile-back"
-              aria-label="Back to the list"
-              onClick={() => {
-                select({ kind: "none" });
-              }}
-            >
-              <ChevronLeft size={20} strokeWidth={2} aria-hidden="true" />
-            </button>
-          )}
-          <MainPane
-            client={client}
-            daemon={daemon}
-            addToast={addToast}
-            onCreateProject={actions.createProjectWithBot}
-            onRenameProject={actions.renameProject}
-            onSetProjectLead={actions.setProjectLead}
-            onDeleteProject={actions.deleteProject}
-            groups={groups}
-          />
-        </main>
-        {groups.dialog}
-        {machineOpen ? <MachinePanel client={client} onClose={closeMachine} /> : null}
-        {overlays.paletteOpen ? (
-          <CommandPalette
-            actions={paletteActions}
-            onSearch={overlays.openSearch}
-            onClose={overlays.closePalette}
-          />
-        ) : null}
-        {overlays.searchOpen ? (
-          <SearchOverlay
-            client={client}
-            conversations={daemon.conversations}
-            bots={bots}
+      <ProfileContext.Provider value={profile}>
+        <div className={daemon.selection.kind === "none" ? "app" : "app app-open"}>
+          <Sidebar
+            status={daemon.status}
+            endpoint={daemon.endpoint}
             projects={daemon.projects}
-            connected={connected}
-            initialQuery={overlays.searchQuery}
-            onOpenBot={openBot}
-            onOpenConversation={openConversation}
-            onClose={overlays.closeSearch}
+            bots={bots}
+            unreadBots={daemon.unreadBots}
+            failedByBot={failedByBot}
+            nextRun={daemon.nextRun}
+            activityByBot={daemon.activityByBot}
+            actionByBot={actionByBot}
+            groups={groups.groups}
+            onNewGroup={groups.openNew}
+            onOpenMachine={openMachine}
+            pendingDecisions={pending}
+            selection={daemon.selection}
+            canControl={canControl}
+            onSelect={select}
+            onOpenSearch={overlays.openBlankSearch}
+            onCreateProject={actions.createProject}
+            onCreateBot={actions.createBot}
+            onDeleteBot={actions.deleteBot}
+            onDeleteProject={actions.deleteProject}
+            onOpenSettings={overlays.openSettings}
           />
-        ) : null}
-        <SettingsLayer client={client} daemon={daemon} overlays={overlays} addToast={addToast} />
-        <Toasts toasts={toasts} onDismiss={dismissToast} />
-      </div>
+          <main className="main">
+            {/* Narrow screens show the list or one view; this goes back to the list. */}
+            {daemon.selection.kind === "none" ? null : (
+              <button
+                type="button"
+                className="mobile-back"
+                aria-label="Back to the list"
+                onClick={() => {
+                  select({ kind: "none" });
+                }}
+              >
+                <ChevronLeft size={20} strokeWidth={2} aria-hidden="true" />
+              </button>
+            )}
+            <MainPane
+              client={client}
+              daemon={daemon}
+              addToast={addToast}
+              onCreateProject={actions.createProjectWithBot}
+              onRenameProject={actions.renameProject}
+              onSetProjectLead={actions.setProjectLead}
+              onDeleteProject={actions.deleteProject}
+              groups={groups}
+            />
+          </main>
+          {groups.dialog}
+          {machineOpen ? <MachinePanel client={client} onClose={closeMachine} /> : null}
+          {overlays.paletteOpen ? (
+            <CommandPalette
+              actions={paletteActions}
+              onSearch={overlays.openSearch}
+              onClose={overlays.closePalette}
+            />
+          ) : null}
+          {overlays.searchOpen ? (
+            <SearchOverlay
+              client={client}
+              conversations={daemon.conversations}
+              bots={bots}
+              projects={daemon.projects}
+              connected={connected}
+              initialQuery={overlays.searchQuery}
+              onOpenBot={openBot}
+              onOpenConversation={openConversation}
+              onClose={overlays.closeSearch}
+            />
+          ) : null}
+          <SettingsLayer client={client} daemon={daemon} overlays={overlays} addToast={addToast} />
+          <Toasts toasts={toasts} onDismiss={dismissToast} />
+        </div>
+      </ProfileContext.Provider>
     </SetupGate>
   );
 }

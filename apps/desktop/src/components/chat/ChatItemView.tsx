@@ -2,6 +2,7 @@ import { ArrowDownLeft, ArrowUpRight, ChevronRight, Paperclip, User } from "luci
 import { useState } from "react";
 import type { ReactElement } from "react";
 import type { Bot, ChatItem } from "../../protocol/entities";
+import { ownerName, useProfile } from "../../app/profile";
 import BotAvatar from "../BotAvatar";
 import Markdown from "../control/Markdown";
 import FileDownloads from "./FileDownloads";
@@ -82,6 +83,20 @@ function BusNote({ item }: { readonly item: ChatItem }): ReactElement {
   );
 }
 
+/** The owner's small avatar: their Gravity pick, else their initial, else a person icon. */
+function OwnerAvatar(): ReactElement {
+  const { profile } = useProfile();
+  return (
+    <span className={`chat-avatar${profile === null ? " chat-avatar-me" : ""}`} aria-hidden="true">
+      {profile === null ? (
+        <User size={13} strokeWidth={2.25} />
+      ) : (
+        <BotAvatar avatar={profile.avatar} name={ownerName(profile)} id="owner" size="sm" />
+      )}
+    </span>
+  );
+}
+
 /** The owner's prompt; uploaded files show as chips above the bubble. */
 function UserMessage({ text }: { readonly text: string }): ReactElement {
   const { body, files } = splitAttachments(text);
@@ -100,9 +115,7 @@ function UserMessage({ text }: { readonly text: string }): ReactElement {
         ) : null}
         {body !== "" ? <div className="chat-bubble chat-bubble-user">{body}</div> : null}
       </div>
-      <span className="chat-avatar chat-avatar-me" aria-hidden="true">
-        <User size={13} strokeWidth={2.25} />
-      </span>
+      <OwnerAvatar />
     </div>
   );
 }

@@ -47,6 +47,8 @@ const REPLY_TYPES: ReadonlySet<string> = new Set(
     bot_actions: true,
     groups: true,
     machine_stats: true,
+    process_stopped: true,
+    profile: true,
     reactions: true,
     group_saved: true,
     group_deleted: true,

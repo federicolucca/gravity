@@ -10,6 +10,7 @@ import type { SettingsCategory } from "./categories";
 import ConnectionSettings from "./ConnectionSettings";
 import DiagnosticsSettings from "./DiagnosticsSettings";
 import GeneralSettings from "./GeneralSettings";
+import ProfileSettings from "./ProfileSettings";
 
 interface CategoryPaneProps {
   readonly client: DaemonApi;
@@ -26,6 +27,9 @@ interface SettingsOverlayProps extends CategoryPaneProps {
 function CategoryPane(props: CategoryPaneProps): ReactElement {
   const { client, daemon, category, addToast } = props;
   switch (category) {
+    case "profile": {
+      return <ProfileSettings />;
+    }
     case "general": {
       return <GeneralSettings />;
     }

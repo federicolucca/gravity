@@ -5,6 +5,7 @@ import type { DaemonApi } from "../../protocol/api";
 import type { MachineStats } from "../../protocol/entities";
 import OverlayShell from "../overlay/OverlayShell";
 import { bytes, duration, level } from "./format";
+import ProcessTable from "./ProcessTable";
 
 interface MachinePanelProps {
   readonly client: DaemonApi;
@@ -53,7 +54,13 @@ function Card({
   );
 }
 
-function StatsView({ stats }: { readonly stats: MachineStats }): ReactElement {
+function StatsView({
+  client,
+  stats,
+}: {
+  readonly client: DaemonApi;
+  readonly stats: MachineStats;
+}): ReactElement {
   const memUsed = stats.memory.total - stats.memory.available;
   const memPct = (memUsed / Math.max(stats.memory.total, 1)) * 100;
   const swapUsed = stats.swap.total - stats.swap.free;
@@ -144,17 +151,7 @@ function StatsView({ stats }: { readonly stats: MachineStats }): ReactElement {
       </Card>
 
       <Card icon={<Cpu size={16} />} title="Top processes">
-        <table className="machine-table">
-          <tbody>
-            {stats.processes.map((proc) => (
-              <tr key={proc.pid}>
-                <td title={`pid ${proc.pid}`}>{proc.name}</td>
-                <td>{proc.cpu.toFixed(1)}%</td>
-                <td>{bytes(proc.rss)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <ProcessTable client={client} processes={stats.processes} />
       </Card>
     </div>
   );
@@ -217,7 +214,11 @@ export default function MachinePanel({ client, onClose }: MachinePanelProps): Re
           </button>
         </header>
         {error !== null ? <p className="chat-error">{error}</p> : null}
-        {stats === null ? <p className="machine-sub">Loading…</p> : <StatsView stats={stats} />}
+        {stats === null ? (
+          <p className="machine-sub">Loading…</p>
+        ) : (
+          <StatsView client={client} stats={stats} />
+        )}
       </div>
     </OverlayShell>
   );

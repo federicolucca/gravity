@@ -225,3 +225,27 @@
   justify-content: flex-end;
   gap: 6px;
 }
+
+.profile-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.profile-card .bot-avatar {
+  width: 56px;
+  height: 56px;
+  font-size: 22px;
+}
+
+.profile-card h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.profile-card p {
+  margin: 2px 0 0;
+  color: var(--text-dim);
+  font-size: 13px;
+}

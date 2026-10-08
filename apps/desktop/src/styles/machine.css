@@ -162,3 +162,14 @@
   color: var(--text-dim);
   text-align: right;
 }
+
+.machine-proc-action {
+  width: 1%;
+  text-align: right;
+}
+
+.machine-proc-action .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}

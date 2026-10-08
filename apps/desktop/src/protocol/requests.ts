@@ -90,6 +90,9 @@ export type ClientRequestBody =
   | { readonly type: "list_bot_actions"; readonly project_id?: string }
   | { readonly type: "list_groups"; readonly project_id?: string }
   | { readonly type: "machine_stats" }
+  | { readonly type: "stop_process"; readonly pid: number; readonly force?: boolean }
+  | { readonly type: "get_profile" }
+  | { readonly type: "save_profile"; readonly display_name: string; readonly avatar: string }
   | { readonly type: "list_reactions"; readonly bot_id: string }
   | {
       readonly type: "set_reaction";

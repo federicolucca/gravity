@@ -26,6 +26,24 @@ impl Conn {
     }
 }
 
+impl Conn {
+    /// `stop_process {pid, force?}` → `{pid}`: SIGTERM, or SIGKILL with `force`.
+    ///
+    /// Only what the daemon's own user may signal can be stopped (the kernel
+    /// enforces that), and never the daemon itself, its parent or init.
+    pub(super) fn stop_process(&self, req_id: &Value, req: &Value) -> anyhow::Result<()> {
+        let pid = req
+            .get("pid")
+            .and_then(Value::as_u64)
+            .and_then(|pid| i32::try_from(pid).ok())
+            .ok_or_else(|| anyhow::anyhow!("pid is required"))?;
+        let force = req.get("force").and_then(Value::as_bool).unwrap_or(false);
+        linux::stop(pid, force)?;
+        self.send(json!({ "type": "process_stopped", "req_id": req_id, "pid": pid }));
+        Ok(())
+    }
+}
+
 #[cfg(target_os = "linux")]
 mod linux {
     use std::collections::HashMap;
@@ -200,6 +218,26 @@ mod linux {
             .unwrap_or_else(|| "Linux".to_string())
     }
 
+    pub(super) fn stop(pid: i32, force: bool) -> anyhow::Result<()> {
+        // SAFETY: getpid/getppid have no preconditions.
+        let (own, parent) = unsafe { (libc::getpid(), libc::getppid()) };
+        anyhow::ensure!(
+            pid > 1 && pid != own && pid != parent,
+            "this process cannot be stopped from here"
+        );
+        let signal = if force { libc::SIGKILL } else { libc::SIGTERM };
+        // SAFETY: kill only sends a signal; the kernel checks permission.
+        if unsafe { libc::kill(pid, signal) } != 0 {
+            let err = std::io::Error::last_os_error();
+            anyhow::bail!(match err.raw_os_error() {
+                Some(libc::EPERM) => "not allowed: the process belongs to another user".to_string(),
+                Some(libc::ESRCH) => "the process has already exited".to_string(),
+                _ => err.to_string(),
+            });
+        }
+        Ok(())
+    }
+
     pub(super) fn collect() -> anyhow::Result<Value> {
         let cpu_before = cpu_times(&read("/proc/stat"));
         anyhow::ensure!(!cpu_before.is_empty(), "/proc/stat is not readable");
@@ -303,6 +341,12 @@ mod linux {
         }
 
         #[test]
+        fn the_daemon_and_init_cannot_be_stopped() {
+            assert!(stop(1, false).is_err());
+            assert!(stop(std::process::id() as i32, false).is_err());
+        }
+
+        #[test]
         fn collect_reads_this_machine() {
             let stats = collect().unwrap();
             assert!(stats["memory"]["total"].as_u64().unwrap() > 0);
@@ -313,6 +357,10 @@ mod linux {
 
 #[cfg(not(target_os = "linux"))]
 mod linux {
+    pub(super) fn stop(_pid: i32, _force: bool) -> anyhow::Result<()> {
+        anyhow::bail!("stopping processes is only available on Linux")
+    }
+
     pub(super) fn collect() -> anyhow::Result<serde_json::Value> {
         anyhow::bail!("machine stats are only available on Linux")
     }
