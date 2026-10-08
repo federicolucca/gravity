@@ -289,6 +289,15 @@ fn decide(
         .map_or(Action::None, |t| Action::Start(t.id.clone()))
 }
 
+/// No task in progress and none that would start: a model override can go.
+fn nothing_queued(boards: &Boards, bot_id: &str) -> bool {
+    let paused = boards.paused_bots.iter().any(|id| id == bot_id);
+    !boards.tasks.iter().any(|t| {
+        t.bot_id == bot_id
+            && (t.status == Status::Progress || (t.status == Status::Todo && (t.chat || !paused)))
+    })
+}
+
 /// What `apply` does once the board is saved.
 enum Effect {
     None,
@@ -430,7 +439,15 @@ pub async fn watch(app: Arc<AppState>) {
                 };
                 next.insert(bot_id.to_string(), ticks);
                 let action = decide(&boards, bot_id, state, ticks, chrono::Utc::now());
-                if let Err(e) = apply(&app, bot_id, action) {
+                let quiet =
+                    action == Action::None && state == BotState::Ready && ticks >= IDLE_TICKS;
+                let result = if quiet && nothing_queued(&boards, bot_id) {
+                    // A task closed over MCP never passes through `Finish`.
+                    models::restore(&app, bot_id)
+                } else {
+                    apply(&app, bot_id, action)
+                };
+                if let Err(e) = result {
                     tracing::warn!(bot_id, error = %e, "task step failed");
                 }
             }
@@ -582,6 +599,21 @@ mod tests {
             .is_some_and(|tasks| tasks.len() == 1));
         boards.tasks[1].body = "hello".into();
         assert_eq!(prompt(&boards.tasks[1]), "hello");
+    }
+
+    #[test]
+    fn an_override_goes_once_nothing_is_queued() {
+        let mut boards = Boards {
+            tasks: vec![task("a", Status::Done), task("t", Status::Todo)],
+            ..Default::default()
+        };
+        assert!(!nothing_queued(&boards, "b"));
+        boards.paused_bots.push("b".into());
+        assert!(nothing_queued(&boards, "b"));
+        boards.tasks[1].status = Status::Progress;
+        assert!(!nothing_queued(&boards, "b"));
+        boards.tasks[1].status = Status::Done;
+        assert!(nothing_queued(&boards, "b"));
     }
 
     #[test]

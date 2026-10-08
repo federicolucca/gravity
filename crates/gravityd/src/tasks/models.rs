@@ -218,6 +218,9 @@ pub fn switch(app: &AppState, bot_id: &str, model: &str) -> anyhow::Result<()> {
 
 /// Restarts the bot on its own model again, if a task override is in force.
 pub fn restore(app: &AppState, bot_id: &str) -> anyhow::Result<()> {
+    if active(&app.cfg.home, bot_id).is_none() {
+        return Ok(());
+    }
     let marked = edit(&app.cfg.home, |all| match all.get_mut(bot_id) {
         Some(o) if !o.restore => {
             o.restore = true;
