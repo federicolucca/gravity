@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type { DaemonApi } from "../../protocol/api";
-import type { BotTask, TaskStatus } from "../../protocol/entities";
+import type { BotTask, TaskDraft, TaskStatus } from "../../protocol/entities";
 
 const POLL_MS = 3000;
 
@@ -8,8 +8,8 @@ export interface TasksApi {
   readonly tasks: readonly BotTask[] | null;
   readonly paused: boolean;
   readonly error: string | null;
-  readonly add: (title: string, body: string) => Promise<void>;
-  readonly edit: (taskId: string, title: string, body: string) => Promise<void>;
+  readonly add: (draft: TaskDraft) => Promise<void>;
+  readonly edit: (taskId: string, draft: TaskDraft) => Promise<void>;
   readonly move: (taskId: string, status: TaskStatus, beforeId?: string) => void;
   readonly remove: (taskId: string) => void;
   readonly setPaused: (paused: boolean) => void;
@@ -74,9 +74,8 @@ export function useTasks(client: DaemonApi, botId: string, connected: boolean): 
     tasks: board?.tasks ?? null,
     paused: board?.paused ?? false,
     error,
-    add: (title, body) => run({ type: "save_task", bot_id: botId, title, body }),
-    edit: (taskId, title, body) =>
-      run({ type: "save_task", bot_id: botId, task_id: taskId, title, body }),
+    add: (draft) => run({ type: "save_task", bot_id: botId, ...draft }),
+    edit: (taskId, draft) => run({ type: "save_task", bot_id: botId, task_id: taskId, ...draft }),
     move: (taskId, status, beforeId) => {
       setBoard((prev) =>
         prev === null

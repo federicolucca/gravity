@@ -131,7 +131,7 @@ export default function TasksPanel({
                   key={task.id}
                   task={task}
                   canControl={canControl}
-                  onEdit={(title, body) => api.edit(task.id, title, body)}
+                  onEdit={(draft) => api.edit(task.id, draft)}
                   onRemove={() => {
                     api.remove(task.id);
                   }}

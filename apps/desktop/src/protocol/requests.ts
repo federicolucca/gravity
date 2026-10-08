@@ -7,6 +7,7 @@ import type {
   DeviceCapability,
   OverlapPolicy,
   RoutineTrigger,
+  TaskModel,
   TaskStatus,
 } from "./entities";
 
@@ -100,6 +101,7 @@ export type ClientRequestBody =
       readonly task_id?: string;
       readonly title: string;
       readonly body: string;
+      readonly model: TaskModel;
     }
   | {
       readonly type: "move_task";

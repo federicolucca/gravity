@@ -68,6 +68,16 @@ interface ChatStep {
 export type TaskStatus = "todo" | "progress" | "done";
 
 /** Work queued for a bot; the daemon hands the first todo to it whenever it idles. */
+/** The model a task asks for; "auto" lets the daemon route it. */
+export type TaskModel = "auto" | "opus" | "sonnet" | "haiku";
+
+/** What the owner types when adding or editing a task. */
+export interface TaskDraft {
+  readonly title: string;
+  readonly body: string;
+  readonly model: TaskModel;
+}
+
 export interface BotTask {
   readonly id: string;
   readonly bot_id: string;
@@ -77,8 +87,8 @@ export interface BotTask {
   readonly created_at: string;
   readonly started_at?: string;
   readonly done_at?: string;
-  /** "opus" | "sonnet" | "haiku"; absent means auto. */
-  readonly model?: string;
+  /** Absent means auto. */
+  readonly model?: Exclude<TaskModel, "auto">;
   /** The model id the task was handed over with. */
   readonly ran_with?: string;
   /** What was done, written by the bot when it closed the task. */

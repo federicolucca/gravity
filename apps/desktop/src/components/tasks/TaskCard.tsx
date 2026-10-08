@@ -1,7 +1,8 @@
 import { Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import type { ReactElement } from "react";
-import type { BotTask } from "../../protocol/entities";
+import type { BotTask, TaskDraft } from "../../protocol/entities";
+import { modelBadge } from "./modelBadge";
 import TaskForm from "./TaskForm";
 
 function when(task: BotTask): string | null {
@@ -21,17 +22,18 @@ export default function TaskCard({
 }: {
   readonly task: BotTask;
   readonly canControl: boolean;
-  readonly onEdit: (title: string, body: string) => Promise<void>;
+  readonly onEdit: (draft: TaskDraft) => Promise<void>;
   readonly onRemove: () => void;
 }): ReactElement {
   const [editing, setEditing] = useState(false);
+  const [open, setOpen] = useState(false);
   if (editing) {
     return (
       <TaskForm
         initial={task}
         submitLabel="Save"
-        onSubmit={async (title, body) => {
-          await onEdit(title, body);
+        onSubmit={async (draft) => {
+          await onEdit(draft);
           setEditing(false);
         }}
         onCancel={() => {
@@ -41,6 +43,7 @@ export default function TaskCard({
     );
   }
   const stamp = when(task);
+  const badge = modelBadge(task);
   return (
     <div
       className={`task-card task-card-${task.status}`}
@@ -52,7 +55,19 @@ export default function TaskCard({
       data-task-id={task.id}
     >
       <div className="task-card-head">
-        <strong>{task.title}</strong>
+        <button
+          type="button"
+          className="task-card-title"
+          aria-expanded={open}
+          onClick={() => {
+            setOpen((was) => !was);
+          }}
+        >
+          {task.title}
+        </button>
+        <span className="task-card-model" title={badge.title}>
+          {badge.label}
+        </span>
         {canControl ? (
           <span className="task-card-actions">
             <button
@@ -76,9 +91,13 @@ export default function TaskCard({
           </span>
         ) : null}
       </div>
-      {task.body === "" ? null : <p>{task.body}</p>}
-      {task.comment === undefined ? null : <p className="task-card-comment">{task.comment}</p>}
-      {stamp === null ? null : <span className="task-card-when">{stamp}</span>}
+      {open ? (
+        <>
+          {task.body === "" ? null : <p>{task.body}</p>}
+          {task.comment === undefined ? null : <p className="task-card-comment">{task.comment}</p>}
+          {stamp === null ? null : <span className="task-card-when">{stamp}</span>}
+        </>
+      ) : null}
     </div>
   );
 }

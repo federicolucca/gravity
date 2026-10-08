@@ -93,7 +93,17 @@
   font-size: 13px;
 }
 
-.task-card-head strong {
+.task-card-title {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
   overflow-wrap: anywhere;
 }
 
@@ -157,4 +167,14 @@
 .task-card-comment {
   border-left: 2px solid var(--accent);
   padding-left: 8px;
+}
+
+.task-card-model {
+  flex: none;
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  white-space: nowrap;
 }
