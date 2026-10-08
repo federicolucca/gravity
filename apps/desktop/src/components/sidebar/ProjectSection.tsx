@@ -1,8 +1,10 @@
 import { useState } from "react";
-import { byRecency, withGroups } from "./recency";
+import { byRecency, folderSummary, rowKey, withFolders, withGroups } from "./recency";
+import type { SidebarRow } from "./recency";
 import type { ReactElement } from "react";
 import type { Bot, Project } from "../../protocol/entities";
 import BotRow from "./BotRow";
+import FolderRow, { ROW_DRAG_TYPE } from "./FolderRow";
 import GroupRow from "./GroupRow";
 import { MoreIcon } from "./icons";
 import PinnedBots from "./PinnedBots";
@@ -35,6 +37,9 @@ export default function ProjectSection(props: ProjectSectionProps): ReactElement
             props.onNewGroup(project.id);
           }
         : undefined,
+    onNewFolder: () => {
+      props.onNewFolder(project.id);
+    },
     onOpenMachine: props.onOpenMachine,
     onDelete: () => {
       void props.onDeleteProject(project.id);
@@ -53,10 +58,73 @@ export default function ProjectSection(props: ProjectSectionProps): ReactElement
     props.activityByBot,
     props.groupActivity ?? {},
   );
+  const entries = withFolders(
+    rows,
+    props.folders.filter((folder) => folder.project_id === project.id),
+    props.activityByBot,
+    props.groupActivity ?? {},
+  );
   const selectedBotId = selection.kind === "bot" ? selection.botId : null;
 
+  const renderRow = (row: SidebarRow): ReactElement => (
+    <div
+      key={rowKey(row)}
+      className="draggable-row"
+      draggable={canControl}
+      onDragStart={(event) => {
+        event.dataTransfer.setData(ROW_DRAG_TYPE, rowKey(row));
+        event.dataTransfer.effectAllowed = "move";
+      }}
+    >
+      {row.kind === "bot" ? (
+        <BotRow
+          bot={row.bot}
+          unread={props.unreadBots[row.bot.id] ?? 0}
+          failed={props.failedByBot.get(row.bot.id) ?? 0}
+          next={props.nextRun[row.bot.id]}
+          activity={props.activityByBot[row.bot.id]}
+          action={props.actionByBot[row.bot.id]}
+          selected={selectedBotId === row.bot.id}
+          canControl={canControl}
+          onClick={() => {
+            onSelect({ kind: "bot", botId: row.bot.id });
+          }}
+          onDelete={() => {
+            void props.onDeleteBot(row.bot.id);
+          }}
+          onTogglePin={() => {
+            props.onTogglePin(row.bot.id);
+          }}
+        />
+      ) : (
+        <GroupRow
+          group={row.group}
+          members={bots.filter((bot) => row.group.bot_ids.includes(bot.id))}
+          activity={props.groupActivity?.[row.group.id]}
+          selected={selection.kind === "group" && selection.groupId === row.group.id}
+          onClick={() => {
+            onSelect({ kind: "group", groupId: row.group.id });
+          }}
+        />
+      )}
+    </div>
+  );
+
   return (
-    <section className="project-section">
+    <section
+      className="project-section"
+      onDragOver={(event) => {
+        if (canControl && event.dataTransfer.types.includes(ROW_DRAG_TYPE)) {
+          event.preventDefault();
+        }
+      }}
+      onDrop={(event) => {
+        if (canControl && event.dataTransfer.types.includes(ROW_DRAG_TYPE)) {
+          event.preventDefault();
+          void props.onPlaceRow(event.dataTransfer.getData(ROW_DRAG_TYPE), null);
+        }
+      }}
+    >
       <div
         className={`project-header ${
           selection.kind === "project" && selection.projectId === project.id
@@ -104,41 +172,38 @@ export default function ProjectSection(props: ProjectSectionProps): ReactElement
             onTogglePin={props.onTogglePin}
           />
 
-          {rows.map((row) =>
-            row.kind === "bot" ? (
-              <BotRow
-                key={row.bot.id}
-                bot={row.bot}
-                unread={props.unreadBots[row.bot.id] ?? 0}
-                failed={props.failedByBot.get(row.bot.id) ?? 0}
-                next={props.nextRun[row.bot.id]}
-                activity={props.activityByBot[row.bot.id]}
-                action={props.actionByBot[row.bot.id]}
-                selected={selectedBotId === row.bot.id}
+          {entries.map((entry) => {
+            if (entry.kind !== "folder") {
+              return renderRow(entry);
+            }
+            const summary = folderSummary(
+              entry.rows,
+              props.activityByBot,
+              props.groupActivity ?? {},
+              props.unreadBots,
+            );
+            return (
+              <FolderRow
+                key={entry.folder.id}
+                folder={entry.folder}
+                count={entry.rows.length}
+                at={summary.at}
+                unread={summary.unread}
                 canControl={canControl}
-                onClick={() => {
-                  onSelect({ kind: "bot", botId: row.bot.id });
+                onRename={() => {
+                  props.onRenameFolder(entry.folder);
                 }}
                 onDelete={() => {
-                  void props.onDeleteBot(row.bot.id);
+                  void props.onDeleteFolder(entry.folder.id);
                 }}
-                onTogglePin={() => {
-                  props.onTogglePin(row.bot.id);
+                onDropRow={(item) => {
+                  void props.onPlaceRow(item, entry.folder.id);
                 }}
-              />
-            ) : (
-              <GroupRow
-                key={row.group.id}
-                group={row.group}
-                members={bots.filter((bot) => row.group.bot_ids.includes(bot.id))}
-                activity={props.groupActivity?.[row.group.id]}
-                selected={selection.kind === "group" && selection.groupId === row.group.id}
-                onClick={() => {
-                  onSelect({ kind: "group", groupId: row.group.id });
-                }}
-              />
-            ),
-          )}
+              >
+                {entry.rows.map((row) => renderRow(row))}
+              </FolderRow>
+            );
+          })}
           {bots.length === 0 ? <div className="muted project-empty">No bots yet.</div> : null}
         </>
       )}

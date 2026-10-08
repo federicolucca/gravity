@@ -3,6 +3,7 @@ import { useCallback, useMemo, useState } from "react";
 import type { ReactElement } from "react";
 import { useDaemonActions } from "./app/useDaemonActions";
 import { useFirstRunSetup } from "./app/useFirstRunSetup";
+import { useFolders } from "./app/useFolders";
 import { useGroups } from "./app/useGroups";
 import { useGroupActivity } from "./components/sidebar/useGroupActivity";
 import { ProfileContext } from "./app/profile";
@@ -99,6 +100,7 @@ export default function App(): ReactElement {
   const { select, bots, canControl, connected } = daemon;
   const actionByBot = useBotActions(client, bots);
   const groups = useGroups(client, connected, bots, select, addToast);
+  const folders = useFolders(client, connected, addToast);
   const groupActivity = useGroupActivity(
     client,
     groups.groups,
@@ -175,6 +177,11 @@ export default function App(): ReactElement {
             actionByBot={actionByBot}
             groups={groups.groups}
             groupActivity={groupActivity}
+            folders={folders.folders}
+            onNewFolder={folders.openNew}
+            onRenameFolder={folders.openRename}
+            onDeleteFolder={folders.remove}
+            onPlaceRow={folders.place}
             onNewGroup={groups.openNew}
             onOpenMachine={openMachine}
             pendingDecisions={pending}
@@ -214,6 +221,7 @@ export default function App(): ReactElement {
             />
           </main>
           {groups.dialog}
+          {folders.dialog}
           {machineOpen ? <MachinePanel client={client} onClose={closeMachine} /> : null}
           {overlays.paletteOpen ? (
             <CommandPalette

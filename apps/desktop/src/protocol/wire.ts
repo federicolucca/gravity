@@ -54,6 +54,7 @@ const REPLY_TYPES: ReadonlySet<string> = new Set(
     reactions: true,
     group_saved: true,
     group_deleted: true,
+    folders: true,
     bot_revisions: true,
     message: true,
     messages: true,

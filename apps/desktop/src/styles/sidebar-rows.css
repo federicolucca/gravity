@@ -321,3 +321,53 @@
   flex: none;
   color: var(--amber);
 }
+
+/* ---------- folders ---------- */
+
+.draggable-row {
+  display: block;
+}
+
+.folder {
+  border-radius: 10px;
+}
+
+.folder-over {
+  background: var(--bg-hover);
+  outline: 1px dashed var(--border);
+}
+
+.folder-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  text-align: left;
+}
+
+.folder-chevron {
+  display: grid;
+  place-items: center;
+  color: var(--text-faint);
+}
+
+.folder-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.folder-body {
+  margin-left: 14px;
+  padding-left: 6px;
+  border-left: 1px solid var(--border);
+}
+
+.folder-empty {
+  padding: 6px 10px;
+  font-size: 12px;
+}

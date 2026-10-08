@@ -5,6 +5,7 @@ import type {
   Bot,
   BotActivity,
   BotGroup,
+  SidebarFolder,
   MachineStats,
   OwnerProfile,
   BotTask,
@@ -103,6 +104,7 @@ export type ServerReply =
   | (ReplyBase & { readonly type: "machine_stats"; readonly stats: MachineStats })
   | (ReplyBase & { readonly type: "groups"; readonly groups: readonly BotGroup[] })
   | (ReplyBase & { readonly type: "group_saved"; readonly group: BotGroup })
+  | (ReplyBase & { readonly type: "folders"; readonly folders: readonly SidebarFolder[] })
   | (ReplyBase & { readonly type: "group_deleted"; readonly group_id: string })
   | (ReplyBase & {
       readonly type: "uploaded";

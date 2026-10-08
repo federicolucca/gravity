@@ -91,7 +91,14 @@ describe("Sidebar", () => {
   it("offers the same menu from the label's right-click and the ⋯ button", async () => {
     const user = userEvent.setup();
     renderSidebar();
-    const entries = ["New Bot", "Project settings", "Machine", "Open folder", "Delete project"];
+    const entries = [
+      "New Bot",
+      "New folder",
+      "Project settings",
+      "Machine",
+      "Open folder",
+      "Delete project",
+    ];
 
     await user.pointer({ keys: "[MouseRight]", target: screen.getByText("Acme") });
     expect(screen.getAllByRole("menuitem").map((item) => item.textContent)).toEqual(entries);

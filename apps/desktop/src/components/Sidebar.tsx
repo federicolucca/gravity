@@ -107,6 +107,11 @@ export default function Sidebar(props: SidebarProps): ReactElement {
             actionByBot={props.actionByBot}
             groups={props.groups}
             groupActivity={props.groupActivity}
+            folders={props.folders}
+            onNewFolder={props.onNewFolder}
+            onRenameFolder={props.onRenameFolder}
+            onDeleteFolder={props.onDeleteFolder}
+            onPlaceRow={props.onPlaceRow}
             onNewGroup={props.onNewGroup}
             onOpenMachine={props.onOpenMachine}
             selection={selection}

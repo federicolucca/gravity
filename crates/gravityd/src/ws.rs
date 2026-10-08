@@ -23,6 +23,7 @@ mod decisions_publish;
 mod dispatch;
 mod downloads;
 mod entities;
+mod folders;
 mod groups;
 mod machine;
 mod messaging;

@@ -168,6 +168,15 @@ export interface BotGroup {
   readonly created_at: string;
 }
 
+/** A sidebar folder: rows of one project the owner gathered; purely visual. */
+export interface SidebarFolder {
+  readonly id: string;
+  readonly name: string;
+  readonly project_id: string;
+  /** `bot:<id>` or `group:<id>`. */
+  readonly items: readonly string[];
+}
+
 export interface ChatItem {
   readonly kind: "user" | "bot" | "bus_in" | "bus_out" | "steps";
   readonly at: string;

@@ -47,3 +47,35 @@ describe("withGroups", () => {
     ]);
   });
 });
+
+describe("withFolders", () => {
+  const activity = {
+    a: { bot_id: "a", from: "", text: "", at: "2026-10-08T10:00:00Z" },
+    b: { bot_id: "b", from: "", text: "", at: "2026-10-08T12:00:00Z" },
+  };
+  const folder = { id: "f", name: "Work", project_id: "p", items: ["bot:a", "group:g"] };
+  const group = { id: "g", name: "CFS", project_id: "p", bot_ids: [] } as never;
+  const rows = [
+    { kind: "bot", bot: mk("b", "ready") },
+    { kind: "bot", bot: mk("a", "ready") },
+    { kind: "group", group },
+  ] as const;
+
+  it("holds rows in the folder and sorts it by its newest row", async () => {
+    const { withFolders } = await import("./recency");
+    const groupActivity = { g: { at: "2026-10-08T13:00:00Z", unread: 2 } };
+    const entries = withFolders(rows, [folder], activity, groupActivity);
+    expect(entries.map((item) => item.kind)).toEqual(["folder", "bot"]);
+    const first = entries[0];
+    expect(first.kind === "folder" && first.rows.length).toBe(2);
+  });
+
+  it("sums unread and finds the newest time of a folder", async () => {
+    const { folderSummary } = await import("./recency");
+    const groupActivity = { g: { at: "2026-10-08T13:00:00Z", unread: 2 } };
+    expect(folderSummary(rows.slice(1), activity, groupActivity, { a: 3 })).toEqual({
+      at: "2026-10-08T13:00:00Z",
+      unread: 5,
+    });
+  });
+});

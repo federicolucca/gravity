@@ -128,6 +128,22 @@ export type ClientRequestBody =
       readonly bot_ids: readonly string[];
     }
   | { readonly type: "delete_group"; readonly group_id: string }
+  | { readonly type: "list_folders" }
+  | {
+      readonly type: "save_folder";
+      /** Absent creates a folder. */
+      readonly folder_id?: string;
+      readonly name: string;
+      readonly project_id: string;
+    }
+  | { readonly type: "delete_folder"; readonly folder_id: string }
+  | {
+      readonly type: "place_in_folder";
+      /** `bot:<id>` or `group:<id>`. */
+      readonly item: string;
+      /** Absent takes the row out of its folder. */
+      readonly folder_id?: string;
+    }
   | {
       readonly type: "download_file";
       readonly bot_id: string;
