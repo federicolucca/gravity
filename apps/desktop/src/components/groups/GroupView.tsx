@@ -71,13 +71,15 @@ export default function GroupView({
         ) : null}
       </header>
       <div className="bot-view-body">
-        <GroupPane
-          key={group.id}
-          client={client}
-          group={group}
-          members={members}
-          canControl={canControl}
-        />
+        <div className="tab-pane">
+          <GroupPane
+            key={group.id}
+            client={client}
+            group={group}
+            members={members}
+            canControl={canControl}
+          />
+        </div>
       </div>
       {confirming ? (
         <ConfirmDialog
