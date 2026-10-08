@@ -51,7 +51,13 @@ pub fn system_md(spec: &BotProvision<'_>) -> String {
          - `list_bots()` to see who exists.\n\
          - `create_routine(...)` to schedule work for yourself; manage it\n\
          later with `list_routines`, `update_routine`, `set_routine_enabled`\n\
-         and `delete_routine`.\n\n\
+         and `delete_routine`.\n\
+         - `add_board_task(title, body)` to queue work for yourself on your\n\
+         Tasks board; the daemon hands you the top todo whenever you are\n\
+         idle. `list_board_tasks`, `update_board_task` and\n\
+         `delete_board_task` manage it. A prompt that starts with `[Task]`\n\
+         came from that board: set it to `done` with `update_board_task`\n\
+         when you finish.\n\n\
          `complete_task` publishes your result to whoever delegated the task —\n\
          it, not `send_message`, is how you report back to another bot. While\n\
          the task is open you can also `send_message` that bot with kind\n\

@@ -25,7 +25,7 @@ export default function OwnerAvatar({
   if (avatar === "" && src !== undefined && failed !== src) {
     return (
       <img
-        className={`bot-avatar bot-avatar-${size}`}
+        className={`bot-avatar bot-avatar-${size} owner-photo`}
         src={src}
         alt=""
         aria-hidden="true"

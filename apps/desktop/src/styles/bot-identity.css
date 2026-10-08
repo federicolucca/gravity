@@ -260,3 +260,9 @@ img.bot-avatar {
 .avatar-choice-on .bot-avatar {
   opacity: 1;
 }
+
+/* The owner's Gravatar: a photo, rounded like the bot tiles. */
+img.bot-avatar.owner-photo {
+  border-radius: 28%;
+  object-fit: cover;
+}

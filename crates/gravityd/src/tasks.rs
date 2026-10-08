@@ -93,13 +93,86 @@ pub fn update<T>(
     Ok(out)
 }
 
+impl Status {
+    pub fn parse(raw: &str) -> anyhow::Result<Self> {
+        match raw {
+            "todo" => Ok(Self::Todo),
+            "progress" => Ok(Self::Progress),
+            "done" => Ok(Self::Done),
+            _ => anyhow::bail!("status is one of todo, progress, done"),
+        }
+    }
+}
+
+pub const MAX_TITLE_CHARS: usize = 200;
+pub const MAX_BODY_CHARS: usize = 20_000;
+
+/// Checks and trims a title and body for a task.
+pub fn validate(title: &str, body: &str) -> anyhow::Result<(String, String)> {
+    let title = title.trim();
+    anyhow::ensure!(
+        !title.is_empty() && title.chars().count() <= MAX_TITLE_CHARS,
+        "a title is 1 to {MAX_TITLE_CHARS} characters"
+    );
+    anyhow::ensure!(
+        body.chars().count() <= MAX_BODY_CHARS,
+        "the description is too long"
+    );
+    Ok((title.to_string(), body.trim().to_string()))
+}
+
+/// A new todo for `bot_id`.
+pub fn new_task(bot_id: &str, title: String, body: String) -> Task {
+    Task {
+        id: uuid::Uuid::new_v4().to_string(),
+        bot_id: bot_id.to_string(),
+        title,
+        body,
+        status: Status::Todo,
+        created_at: chrono::Utc::now().to_rfc3339(),
+        started_at: None,
+        done_at: None,
+        seen_working: false,
+    }
+}
+
+/// Moves a task to another column, keeping its timestamps consistent. Moving
+/// to todo or progress never sends anything; the queue picks todo up.
+pub fn set_status(task: &mut Task, to: Status) {
+    if task.status == to {
+        return;
+    }
+    let now = chrono::Utc::now().to_rfc3339();
+    match to {
+        Status::Todo => {
+            task.started_at = None;
+            task.done_at = None;
+        }
+        // Marked in progress by hand: the queue waits for the bot to go idle
+        // after work before calling it done.
+        Status::Progress => {
+            task.started_at = Some(now);
+            task.done_at = None;
+            task.seen_working = false;
+        }
+        Status::Done => task.done_at = Some(now),
+    }
+    task.status = to;
+}
+
 /// The prompt a task becomes in the bot's terminal.
 pub fn prompt(task: &Task) -> String {
-    if task.body.trim().is_empty() {
-        format!("[Task] {}", task.title)
-    } else {
-        format!("[Task] {}\n\n{}", task.title, task.body.trim())
+    let mut out = format!("[Task] {}", task.title);
+    if !task.body.is_empty() {
+        out.push_str("\n\n");
+        out.push_str(&task.body);
     }
+    out.push_str(&format!(
+        "\n\n(From your Tasks board, task_id {}. When it is finished, call \
+         update_board_task with status \"done\".)",
+        task.id
+    ));
+    out
 }
 
 #[derive(Debug, PartialEq)]
@@ -327,10 +400,11 @@ mod tests {
     }
 
     #[test]
-    fn prompts_carry_the_title_and_body() {
+    fn prompts_carry_the_title_body_and_id() {
         let mut t = task("Fix the build", Status::Todo);
-        assert_eq!(prompt(&t), "[Task] Fix the build");
-        t.body = " details ".into();
-        assert_eq!(prompt(&t), "[Task] Fix the build\n\ndetails");
+        assert!(prompt(&t)
+            .starts_with("[Task] Fix the build\n\n(From your Tasks board, task_id Fix the build."));
+        t.body = "details".into();
+        assert!(prompt(&t).starts_with("[Task] Fix the build\n\ndetails\n\n(From"));
     }
 }

@@ -3,19 +3,7 @@
 use serde_json::{json, Value};
 
 use super::Conn;
-use crate::tasks::{board_json, load, update, Status, Task};
-
-const MAX_TITLE_CHARS: usize = 200;
-const MAX_BODY_CHARS: usize = 20_000;
-
-fn status(raw: &str) -> anyhow::Result<Status> {
-    match raw {
-        "todo" => Ok(Status::Todo),
-        "progress" => Ok(Status::Progress),
-        "done" => Ok(Status::Done),
-        _ => anyhow::bail!("unknown status"),
-    }
-}
+use crate::tasks::{board_json, load, new_task, set_status, update, validate, Status};
 
 impl Conn {
     fn send_board(&self, req_id: &Value, bot_id: &str) {
@@ -36,20 +24,10 @@ impl Conn {
     pub(super) fn save_task(&self, req_id: &Value, req: &Value) -> anyhow::Result<()> {
         let bot_id = Self::str_field(req, "bot_id")?;
         anyhow::ensure!(self.app.db.get_bot(bot_id)?.is_some(), "bot not found");
-        let title = Self::str_field(req, "title")?.trim().to_string();
-        anyhow::ensure!(
-            !title.is_empty() && title.chars().count() <= MAX_TITLE_CHARS,
-            "a title is 1 to {MAX_TITLE_CHARS} characters"
-        );
-        let body = req
-            .get("body")
-            .and_then(Value::as_str)
-            .unwrap_or("")
-            .to_string();
-        anyhow::ensure!(
-            body.chars().count() <= MAX_BODY_CHARS,
-            "the description is too long"
-        );
+        let (title, body) = validate(
+            Self::str_field(req, "title")?,
+            req.get("body").and_then(Value::as_str).unwrap_or(""),
+        )?;
         let task_id = req.get("task_id").and_then(Value::as_str);
         update(&self.app.cfg.home, |boards| {
             match task_id {
@@ -62,17 +40,7 @@ impl Conn {
                     task.title = title;
                     task.body = body;
                 }
-                None => boards.tasks.push(Task {
-                    id: uuid::Uuid::new_v4().to_string(),
-                    bot_id: bot_id.to_string(),
-                    title,
-                    body,
-                    status: Status::Todo,
-                    created_at: chrono::Utc::now().to_rfc3339(),
-                    started_at: None,
-                    done_at: None,
-                    seen_working: false,
-                }),
+                None => boards.tasks.push(new_task(bot_id, title, body)),
             }
             Ok(())
         })?;
@@ -80,12 +48,11 @@ impl Conn {
         Ok(())
     }
 
-    /// `move_task {bot_id, task_id, status, before_id?}` → the board. Moving
-    /// to todo or progress never sends anything; the queue picks todo up.
+    /// `move_task {bot_id, task_id, status, before_id?}` → the board.
     pub(super) fn move_task(&self, req_id: &Value, req: &Value) -> anyhow::Result<()> {
         let bot_id = Self::str_field(req, "bot_id")?;
         let task_id = Self::str_field(req, "task_id")?;
-        let to = status(Self::str_field(req, "status")?)?;
+        let to = Status::parse(Self::str_field(req, "status")?)?;
         let before = req.get("before_id").and_then(Value::as_str);
         update(&self.app.cfg.home, |boards| {
             let index = boards
@@ -94,24 +61,7 @@ impl Conn {
                 .position(|t| t.id == task_id && t.bot_id == bot_id)
                 .ok_or_else(|| anyhow::anyhow!("task not found"))?;
             let mut task = boards.tasks.remove(index);
-            if task.status != to {
-                let now = chrono::Utc::now().to_rfc3339();
-                match to {
-                    Status::Todo => {
-                        task.started_at = None;
-                        task.done_at = None;
-                    }
-                    // Marked in progress by hand: the owner is handling it,
-                    // so the queue waits for the bot to go idle after work.
-                    Status::Progress => {
-                        task.started_at = Some(now);
-                        task.done_at = None;
-                        task.seen_working = false;
-                    }
-                    Status::Done => task.done_at = Some(now),
-                }
-                task.status = to;
-            }
+            set_status(&mut task, to);
             let at = before
                 .and_then(|id| boards.tasks.iter().position(|t| t.id == id))
                 .unwrap_or(boards.tasks.len());
