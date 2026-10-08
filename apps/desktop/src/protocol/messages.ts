@@ -7,6 +7,7 @@ import type {
   BotGroup,
   MachineStats,
   OwnerProfile,
+  BotTask,
   ChatItem,
   BotRevision,
   BotState,
@@ -85,6 +86,12 @@ export type ServerReply =
       readonly reactions: Readonly<Record<string, string>>;
     })
   | (ReplyBase & { readonly type: "process_stopped"; readonly pid: number })
+  | (ReplyBase & {
+      readonly type: "tasks";
+      readonly bot_id: string;
+      readonly tasks: readonly BotTask[];
+      readonly paused: boolean;
+    })
   | (ReplyBase & { readonly type: "profile" } & OwnerProfile)
   | (ReplyBase & { readonly type: "machine_stats"; readonly stats: MachineStats })
   | (ReplyBase & { readonly type: "groups"; readonly groups: readonly BotGroup[] })

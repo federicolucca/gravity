@@ -33,6 +33,7 @@ pub mod service;
 #[path = "service/windows.rs"]
 pub mod service;
 pub mod supervisor;
+pub mod tasks;
 pub mod terminal;
 pub mod worktree;
 pub mod ws;

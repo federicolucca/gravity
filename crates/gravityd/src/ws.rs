@@ -31,6 +31,7 @@ mod profile;
 mod reactions;
 mod routines;
 mod runtime;
+mod tasks;
 mod terminal;
 mod uploads;
 mod views;

@@ -1,0 +1,155 @@
+.tasks-panel .panel-header {
+  gap: 12px;
+}
+
+.tasks-auto {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.tasks-help {
+  margin: 0 0 12px;
+  font-size: 12px;
+}
+
+.tasks-board {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+
+.tasks-column {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 160px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-raised);
+  transition:
+    border-color 0.12s,
+    background 0.12s;
+}
+
+.tasks-column-over {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.tasks-column-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.tasks-count {
+  min-width: 20px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--border);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.tasks-empty {
+  margin: 4px 0;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.task-card {
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--text-dim);
+  border-radius: 8px;
+  background: var(--bg);
+  cursor: grab;
+}
+
+.task-card-progress {
+  border-left-color: var(--accent);
+}
+
+.task-card-done {
+  border-left-color: #22a06b;
+  opacity: 0.8;
+}
+
+.task-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.task-card-head strong {
+  overflow-wrap: anywhere;
+}
+
+.task-card-actions {
+  display: flex;
+  flex: none;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
+.task-card:hover .task-card-actions,
+.task-card:focus-within .task-card-actions {
+  opacity: 1;
+}
+
+.task-card p {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--text-dim);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.task-card-when {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.task-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.task-form input,
+.task-form textarea {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.task-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+@media (hover: none) {
+  .task-card-actions {
+    opacity: 0.7;
+  }
+}
+
+@media (max-width: 720px) {
+  .tasks-board {
+    grid-template-columns: 1fr;
+  }
+}

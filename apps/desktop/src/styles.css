@@ -21,5 +21,6 @@
 @import "./styles/setup.css";
 @import "./styles/chat.css";
 @import "./styles/groups.css";
+@import "./styles/tasks.css";
 @import "./styles/machine.css";
 @import "./styles/mobile.css";

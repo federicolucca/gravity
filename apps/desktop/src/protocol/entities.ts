@@ -65,6 +65,20 @@ interface ChatStep {
  * One item of a bot's conversation as a chat, read from its transcript:
  * an owner prompt, a bot reply, bus traffic, or a folded run of tool calls.
  */
+export type TaskStatus = "todo" | "progress" | "done";
+
+/** Work queued for a bot; the daemon hands the first todo to it whenever it idles. */
+export interface BotTask {
+  readonly id: string;
+  readonly bot_id: string;
+  readonly title: string;
+  readonly body: string;
+  readonly status: TaskStatus;
+  readonly created_at: string;
+  readonly started_at?: string;
+  readonly done_at?: string;
+}
+
 /** The owner: the Claude account signed in on the daemon's machine, plus Gravity's own picks. */
 export interface OwnerProfile {
   /** `oauthAccount` fields from `~/.claude.json` (camelCase, as Claude Code stores them). */

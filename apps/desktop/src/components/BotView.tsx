@@ -16,6 +16,7 @@ import ChatPane from "./chat/ChatPane";
 import type { BotTab } from "./bot/BotTabs";
 import InfoPanel from "./InfoPanel";
 import RoutinesPanel from "./RoutinesPanel";
+import TasksPanel from "./tasks/TasksPanel";
 import TerminalPane from "./TerminalPane";
 
 interface BotViewProps {
@@ -158,6 +159,16 @@ export default function BotView(props: BotViewProps): ReactElement {
             {tab === "chat" ? (
               <div className="tab-pane">
                 <ChatPane key={bot.id} client={client} bot={bot} canWrite={canWrite} />
+              </div>
+            ) : null}
+            {tab === "tasks" ? (
+              <div className="tab-pane tab-pane-scroll">
+                <TasksPanel
+                  client={client}
+                  bot={bot}
+                  connected={connected}
+                  canControl={canControl}
+                />
               </div>
             ) : null}
             {tab === "routines" ? (

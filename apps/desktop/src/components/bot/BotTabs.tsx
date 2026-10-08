@@ -1,11 +1,12 @@
 import type { ReactElement } from "react";
 
-const BOT_TABS = ["chat", "terminal", "routines"] as const;
+const BOT_TABS = ["chat", "terminal", "tasks", "routines"] as const;
 export type BotTab = (typeof BOT_TABS)[number];
 
 const TAB_LABEL: Readonly<Record<BotTab, string>> = {
   chat: "Chat",
   terminal: "Terminal",
+  tasks: "Tasks",
   routines: "Routines",
 };
 

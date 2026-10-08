@@ -7,6 +7,7 @@ import type {
   DeviceCapability,
   OverlapPolicy,
   RoutineTrigger,
+  TaskStatus,
 } from "./entities";
 
 export type ClientRequestBody =
@@ -92,6 +93,23 @@ export type ClientRequestBody =
   | { readonly type: "machine_stats" }
   | { readonly type: "stop_process"; readonly pid: number; readonly force?: boolean }
   | { readonly type: "get_profile" }
+  | { readonly type: "list_tasks"; readonly bot_id: string }
+  | {
+      readonly type: "save_task";
+      readonly bot_id: string;
+      readonly task_id?: string;
+      readonly title: string;
+      readonly body: string;
+    }
+  | {
+      readonly type: "move_task";
+      readonly bot_id: string;
+      readonly task_id: string;
+      readonly status: TaskStatus;
+      readonly before_id?: string;
+    }
+  | { readonly type: "delete_task"; readonly bot_id: string; readonly task_id: string }
+  | { readonly type: "pause_tasks"; readonly bot_id: string; readonly paused: boolean }
   | { readonly type: "save_profile"; readonly display_name: string; readonly avatar: string }
   | { readonly type: "list_reactions"; readonly bot_id: string }
   | {
