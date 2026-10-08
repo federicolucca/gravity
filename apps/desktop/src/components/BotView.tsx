@@ -12,6 +12,7 @@ import {
 } from "../settings";
 import BotHeader from "./bot/BotHeader";
 import BotTabs from "./bot/BotTabs";
+import ChatPane from "./chat/ChatPane";
 import type { BotTab } from "./bot/BotTabs";
 import InfoPanel from "./InfoPanel";
 import RoutinesPanel from "./RoutinesPanel";
@@ -42,7 +43,7 @@ function clamp(value: number, minimum: number, maximum: number): number {
 
 export default function BotView(props: BotViewProps): ReactElement {
   const { client, bot, bots, connected, canControl, onToast } = props;
-  const [tab, setTab] = useState<BotTab>("terminal");
+  const [tab, setTab] = useState<BotTab>("chat");
   const [infoPanel, setInfoPanel] = useState(loadBotInfoPanel);
   const [maxInfoPanelWidth, setMaxInfoPanelWidth] = useState(FALLBACK_MAX_INFO_PANEL_WIDTH);
   const layoutRef = useRef<HTMLDivElement | null>(null);
@@ -154,6 +155,11 @@ export default function BotView(props: BotViewProps): ReactElement {
             <div className={tab === "terminal" ? "tab-pane" : "tab-pane tab-pane-hidden"}>
               <TerminalPane client={client} botId={bot.id} canWrite={canWrite} onToast={onToast} />
             </div>
+            {tab === "chat" ? (
+              <div className="tab-pane">
+                <ChatPane client={client} bot={bot} canWrite={canWrite} />
+              </div>
+            ) : null}
             {tab === "routines" ? (
               <div className="tab-pane tab-pane-scroll">
                 <RoutinesPanel

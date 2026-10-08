@@ -108,6 +108,11 @@ pub(crate) fn newest_transcript(dir: &Path) -> Option<PathBuf> {
 /// end would cost more every day the bot lives; only the tail is read. The
 /// seek can land mid-record, so that leading fragment is dropped.
 pub(crate) fn tail_lines(path: &Path, max_lines: usize) -> Vec<String> {
+    tail_lines_within(path, max_lines, TAIL_BYTES)
+}
+
+/// [`tail_lines`] with an explicit byte budget for the tail that is read.
+pub(crate) fn tail_lines_within(path: &Path, max_lines: usize, max_bytes: u64) -> Vec<String> {
     use std::io::{Read, Seek, SeekFrom};
 
     let Ok(mut file) = fs::File::open(path) else {
@@ -116,7 +121,7 @@ pub(crate) fn tail_lines(path: &Path, max_lines: usize) -> Vec<String> {
     let Ok(len) = file.seek(SeekFrom::End(0)) else {
         return Vec::new();
     };
-    let start = len.saturating_sub(TAIL_BYTES);
+    let start = len.saturating_sub(max_bytes);
     if file.seek(SeekFrom::Start(start)).is_err() {
         return Vec::new();
     }

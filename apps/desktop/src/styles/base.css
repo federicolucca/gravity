@@ -1,4 +1,48 @@
+/* Light is the default theme; `data-theme="dark"` on <html> restores the dark one. */
 :root {
+  color-scheme: light;
+  --bg: #ffffff;
+  --bg-raised: #f7f7f5;
+  --bg-hover: #f0f0ee;
+  --bg-active: #ebebe8;
+  --border: #e6e6e3;
+  --text: #2b2d33;
+  --text-dim: #6e717b;
+  /* One step stronger than --text: the owner's published words and headlines. */
+  --text-strong: #111216;
+  /* Below --text-dim: key hints, ages and separators. */
+  --text-faint: #a2a5ad;
+  --accent: #5046e5;
+  --accent-soft: #eeedfd;
+  --on-accent: #ffffff;
+  --green: #22a55b;
+  --blue: #3b82f6;
+  --amber: #f08c1a;
+  --red: #e5484d;
+  --gray: #9ca0a8;
+  --btn-hover-border: #d6d6d2;
+  --primary-bg: #5046e5;
+  --primary-border: #4338ca;
+  --primary-hover: #4338ca;
+  --good-bg: #e7f6ec;
+  --good-border: #b7e3c5;
+  --danger-bg: #fdecec;
+  --danger-border: #f5c2c3;
+  --terminal-bg: #ffffff;
+  --terminal-fg: #2b2d33;
+  --terminal-selection: #d9d7fb;
+  --scrim: rgba(20, 22, 30, 0.28);
+  --shadow: 0 1px 2px rgba(20, 22, 30, 0.06), 0 4px 16px rgba(20, 22, 30, 0.06);
+  --bubble-user: #5046e5;
+  --bubble-user-text: #ffffff;
+  --bubble-bot: #f1f1ef;
+  --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --mono: "SF Mono", "Cascadia Mono", "Menlo", "Monaco", monospace;
+  /* Height of the window drag strip the macOS traffic lights sit in. */
+  --titlebar-h: 40px;
+}
+
+:root[data-theme="dark"] {
   color-scheme: dark;
   --bg: #0d0e12;
   --bg-raised: #14161c;
@@ -7,20 +51,32 @@
   --border: #262a35;
   --text: #d8dae2;
   --text-dim: #8b90a0;
-  /* One step brighter than --text: the owner's published words and headlines. */
   --text-strong: #f2f3f7;
-  /* Below --text-dim: key hints, ages and separators. */
   --text-faint: #5c6170;
   --accent: #7aa2f7;
+  --accent-soft: rgba(122, 162, 247, 0.12);
+  --on-accent: #0b1020;
   --green: #4ade80;
   --blue: #60a5fa;
   --amber: #fbbf24;
   --red: #f87171;
   --gray: #6b7280;
-  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif;
-  --mono: "SF Mono", "Menlo", "Monaco", monospace;
-  /* Height of the window drag strip the macOS traffic lights sit in. */
-  --titlebar-h: 40px;
+  --btn-hover-border: #333a4a;
+  --primary-bg: #2b3c63;
+  --primary-border: #3d5390;
+  --primary-hover: #34497a;
+  --good-bg: #1d3d2a;
+  --good-border: #2c5c3f;
+  --danger-bg: #46232a;
+  --danger-border: #6b3540;
+  --terminal-bg: #101116;
+  --terminal-fg: #d8dae2;
+  --terminal-selection: #33405e;
+  --scrim: rgba(0, 0, 0, 0.5);
+  --shadow: none;
+  --bubble-user: #2b3c63;
+  --bubble-user-text: #f2f3f7;
+  --bubble-bot: #1b1e26;
 }
 
 * {

@@ -12,7 +12,7 @@
 
 .btn:hover:not(:disabled) {
   background: var(--bg-hover);
-  border-color: #333a4a;
+  border-color: var(--btn-hover-border);
 }
 
 .btn:disabled {
@@ -26,22 +26,23 @@
 }
 
 .btn-primary {
-  background: #2b3c63;
-  border-color: #3d5390;
+  background: var(--primary-bg);
+  color: var(--on-accent);
+  border-color: var(--primary-border);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #34497a;
+  background: var(--primary-hover);
 }
 
 .btn-good {
-  background: #1d3d2a;
-  border-color: #2c5c3f;
+  background: var(--good-bg);
+  border-color: var(--good-border);
 }
 
 .btn-danger {
-  background: #46232a;
-  border-color: #6b3540;
+  background: var(--danger-bg);
+  border-color: var(--danger-border);
 }
 
 .icon-btn {

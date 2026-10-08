@@ -193,8 +193,9 @@
 }
 
 .toggle input:checked + .toggle-track {
-  background: #2b3c63;
-  border-color: #3d5390;
+  background: var(--primary-bg);
+  color: var(--on-accent);
+  border-color: var(--primary-border);
 }
 
 .toggle input:checked + .toggle-track::before {

@@ -121,6 +121,37 @@ impl Conn {
     /// bot's transcript from disk, tens of milliseconds on an idle machine and
     /// far more on a busy one, and a connection handles its frames in order:
     /// left inline it would hold every keystroke typed behind it.
+    /// A bot's conversation as chat items, read from its transcript.
+    pub(super) fn get_chat(&self, req_id: &Value, req: &Value) -> anyhow::Result<()> {
+        let bot_id = Self::str_field(req, "bot_id")?.to_string();
+        let limit = req
+            .get("limit")
+            .and_then(Value::as_u64)
+            .map_or(crate::chat::DEFAULT_LIMIT, |n| usize::try_from(n).unwrap_or(usize::MAX));
+        let bot = self
+            .app
+            .db
+            .get_bot(&bot_id)?
+            .ok_or_else(|| anyhow::anyhow!("bot not found"))?;
+        let app = self.app.clone();
+        let out = self.out.clone();
+        let req_id = req_id.clone();
+        tokio::task::spawn_blocking(move || {
+            let items = match bot.runtime {
+                bus::BotRuntime::CodexCli => Vec::new(),
+                _ => crate::chat::for_workspace(
+                    &app.cfg.user_home,
+                    Path::new(&bot.workspace_path),
+                    limit,
+                ),
+            };
+            let _ = out.send(json!({
+                "type": "chat", "req_id": req_id, "bot_id": bot_id, "items": items
+            }));
+        });
+        Ok(())
+    }
+
     pub(super) fn list_bot_activity(&self, req_id: &Value, req: &Value) -> anyhow::Result<()> {
         let project_id = req
             .get("project_id")

@@ -31,6 +31,18 @@ type LinkHandler = NonNullable<ITerminalOptions["linkHandler"]>;
  */
 const linkFailure: { report: (body: string) => void } = { report: () => {} };
 
+/** The xterm palette, read from the active theme's CSS tokens. */
+function terminalTheme(): { background: string; foreground: string; cursor: string; selectionBackground: string } {
+  const css = getComputedStyle(document.documentElement);
+  const token = (name: string, fallback: string): string => css.getPropertyValue(name).trim() || fallback;
+  return {
+    background: token("--terminal-bg", "#ffffff"),
+    foreground: token("--terminal-fg", "#2b2d33"),
+    cursor: token("--accent", "#5046e5"),
+    selectionBackground: token("--terminal-selection", "#d9d7fb"),
+  };
+}
+
 function activateLink(_event: MouseEvent, uri: string): void {
   openExternalUrl(uri).catch((error: unknown) => {
     linkFailure.report(error instanceof Error ? error.message : `${uri} could not be opened.`);
@@ -84,12 +96,7 @@ function createTerminal(): CachedTerminal {
     cursorBlink: true,
     // `term.element` only exists once opened, so the host is resolved lazily.
     linkHandler: createLinkHandler(() => term.element ?? element),
-    theme: {
-      background: "#101116",
-      foreground: "#d8dae2",
-      cursor: "#7aa2f7",
-      selectionBackground: "#33405e",
-    },
+    theme: terminalTheme(),
   });
   const fit = new FitAddon();
   term.loadAddon(fit);

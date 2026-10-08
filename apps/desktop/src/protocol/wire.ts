@@ -41,6 +41,7 @@ const REPLY_TYPES: ReadonlySet<string> = new Set(
     bot: true,
     bots: true,
     bot_activity: true,
+    chat: true,
     bot_revisions: true,
     message: true,
     messages: true,

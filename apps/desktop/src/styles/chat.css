@@ -1,0 +1,249 @@
+/* ---------- chat view: the conversation as a dialogue ---------- */
+
+.chat-pane {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+
+.chat-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.chat-column {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 20px 24px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.chat-empty {
+  color: var(--text-dim);
+  text-align: center;
+  margin-top: 48px;
+}
+
+.chat-time {
+  align-self: center;
+  margin: 14px 0 6px;
+  font-size: 11.5px;
+  color: var(--text-faint);
+}
+
+.chat-row {
+  display: flex;
+}
+
+.chat-row-user {
+  justify-content: flex-end;
+}
+
+.chat-bubble {
+  max-width: min(78%, 640px);
+  padding: 9px 14px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.chat-bubble-user {
+  background: var(--bubble-user);
+  color: var(--bubble-user-text);
+  border-bottom-right-radius: 6px;
+  white-space: pre-wrap;
+}
+
+.chat-bubble-bot {
+  background: var(--bubble-bot);
+  color: var(--text);
+  border-bottom-left-radius: 6px;
+}
+
+.chat-bubble-bot .markdown > :first-child {
+  margin-top: 0;
+}
+
+.chat-bubble-bot .markdown > :last-child {
+  margin-bottom: 0;
+}
+
+.chat-bubble-bot code {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  background: var(--bg);
+  border-radius: 5px;
+  padding: 1px 5px;
+}
+
+.chat-bubble-bot pre {
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 10px 12px;
+  overflow-x: auto;
+}
+
+.chat-bubble-bot pre code {
+  padding: 0;
+}
+
+/* Folded tool calls: quiet, left-aligned under the bot's bubbles. */
+.chat-steps {
+  align-self: flex-start;
+  margin: 0 0 2px 6px;
+  max-width: min(78%, 640px);
+}
+
+.chat-steps-toggle,
+.chat-bus-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  padding: 2px 6px;
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--text-faint);
+  cursor: pointer;
+}
+
+.chat-steps-toggle:hover,
+.chat-bus-toggle:hover {
+  color: var(--text-dim);
+  background: var(--bg-hover);
+}
+
+.chat-steps-toggle svg {
+  transition: transform 120ms ease;
+}
+
+.chat-steps-open .chat-steps-toggle svg {
+  transform: rotate(90deg);
+}
+
+.chat-steps-list {
+  list-style: none;
+  margin: 4px 0 6px;
+  padding: 8px 12px;
+  border-left: 2px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.chat-step-tool {
+  font-family: var(--mono);
+  color: var(--text-dim);
+  margin-right: 8px;
+}
+
+.chat-step-detail {
+  color: var(--text-dim);
+  overflow-wrap: anywhere;
+}
+
+/* Bus traffic: a centred system line, body on click. */
+.chat-bus {
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 6px 0;
+  max-width: 78%;
+}
+
+.chat-bus-toggle strong {
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+.chat-bus-body {
+  margin-top: 4px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+/* Three dots while the bot works. */
+.chat-typing {
+  align-self: flex-start;
+  width: 44px;
+  height: 26px;
+  margin-left: 4px;
+  border-radius: 13px;
+  background:
+    radial-gradient(circle, var(--text-faint) 3px, transparent 3.5px) 9px 50% / 10px 10px no-repeat,
+    radial-gradient(circle, var(--text-faint) 3px, transparent 3.5px) 18px 50% / 10px 10px no-repeat,
+    radial-gradient(circle, var(--text-faint) 3px, transparent 3.5px) 27px 50% / 10px 10px no-repeat,
+    var(--bubble-bot);
+  animation: chat-typing 1.4s ease-in-out infinite;
+}
+
+@keyframes chat-typing {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.chat-composer {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  max-width: 820px;
+  width: calc(100% - 48px);
+  margin: 0 auto 16px;
+  padding: 6px 6px 6px 16px;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: var(--bg);
+  box-shadow: var(--shadow);
+}
+
+.chat-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  resize: none;
+  padding: 8px 0;
+  font-size: 14px;
+  max-height: 180px;
+  field-sizing: content;
+}
+
+.chat-input:focus {
+  border: none;
+}
+
+.chat-send {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent);
+  color: var(--on-accent);
+  cursor: pointer;
+}
+
+.chat-send:disabled {
+  background: var(--bg-active);
+  color: var(--text-faint);
+  cursor: default;
+}

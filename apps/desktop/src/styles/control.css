@@ -56,9 +56,9 @@
 /* Shell */
 
 .control-center {
-  --cc-title: #e8e9ef;
-  --cc-body: #c3c6d1;
-  --cc-faint-border: #3a3f4d;
+  --cc-title: var(--text-strong);
+  --cc-body: var(--text);
+  --cc-faint-border: var(--border);
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -99,7 +99,7 @@
 }
 
 .cc-link-accent:hover {
-  color: #a3bcf9;
+  color: var(--accent);
 }
 
 .cc-badge {
@@ -269,7 +269,7 @@
 
 .cc-btn-green:hover:not(:disabled),
 .cc-btn-green-active {
-  background: #6ee79a;
+  background: var(--green);
 }
 
 .cc-btn-green:disabled {

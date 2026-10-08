@@ -209,12 +209,12 @@
 
 .badge-unread {
   background: var(--accent);
-  color: #0b1020;
+  color: var(--on-accent);
 }
 
 .badge-failed {
   background: var(--red);
-  color: #2a0b0b;
+  color: #ffffff;
 }
 
 /* state dots */

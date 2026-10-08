@@ -4,6 +4,7 @@ import type { Decision, DecisionComment, PendingCounts, PublishResult, Tag } fro
 import type {
   Bot,
   BotActivity,
+  ChatItem,
   BotRevision,
   BotState,
   BusMessage,
@@ -60,6 +61,11 @@ export type ServerReply =
   | (ReplyBase & {
       readonly type: "bot_activity";
       readonly activity: readonly BotActivity[];
+    })
+  | (ReplyBase & {
+      readonly type: "chat";
+      readonly bot_id: string;
+      readonly items: readonly ChatItem[];
     })
   | (ReplyBase & {
       readonly type: "bot_revisions";

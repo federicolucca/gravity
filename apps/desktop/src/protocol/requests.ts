@@ -87,6 +87,7 @@ export type ClientRequestBody =
       readonly limit?: number;
     }
   | { readonly type: "list_bot_activity"; readonly project_id?: string }
+  | { readonly type: "get_chat"; readonly bot_id: string; readonly limit?: number }
   | { readonly type: "list_conversations"; readonly project_id?: string }
   | { readonly type: "list_routines"; readonly bot_id: string }
   | {

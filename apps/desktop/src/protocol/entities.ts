@@ -55,6 +55,24 @@ export interface Bot {
   readonly created_at: string;
 }
 
+/** One tool call inside a `steps` chat item. */
+export interface ChatStep {
+  readonly tool: string;
+  readonly detail: string;
+}
+
+/**
+ * One item of a bot's conversation as a chat, read from its transcript:
+ * an owner prompt, a bot reply, bus traffic, or a folded run of tool calls.
+ */
+export interface ChatItem {
+  readonly kind: "user" | "bot" | "bus_in" | "bus_out" | "steps";
+  readonly at: string;
+  readonly text?: string;
+  readonly peer?: string;
+  readonly steps?: readonly ChatStep[];
+}
+
 /**
  * One line of "what happened last" for a bot, as the sidebar shows it.
  *
