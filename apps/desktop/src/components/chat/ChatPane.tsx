@@ -6,6 +6,7 @@ import ChatComposer from "./ChatComposer";
 import ChatItemView from "./ChatItemView";
 import { dayLabel, needsTimeGap } from "./chatTime";
 import { downloadFile } from "./downloads";
+import { sendPrompt } from "./send";
 import { promptWithAttachments, uploadFile } from "./uploads";
 
 interface ChatPaneProps {
@@ -97,6 +98,46 @@ export default function ChatPane({ client, bot, canWrite }: ChatPaneProps): Reac
   };
 
   const [sendError, setSendError] = useState<string | null>(null);
+  const [reactions, setReactions] = useState<Readonly<Record<string, string>>>({});
+
+  useEffect(() => {
+    let alive = true;
+    client
+      .request({ type: "list_reactions", bot_id: botId }, "reactions")
+      .then((reply) => {
+        if (alive) {
+          setReactions(reply.reactions);
+        }
+        return undefined;
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [client, botId]);
+
+  const react = async (key: string, emoji: string | null): Promise<void> => {
+    const previous = reactions;
+    const next = { ...reactions };
+    if (emoji === null) {
+      delete next[key];
+    } else {
+      next[key] = emoji;
+    }
+    setReactions(next);
+    try {
+      const reply = await client.request(
+        emoji === null
+          ? { type: "set_reaction", bot_id: botId, key }
+          : { type: "set_reaction", bot_id: botId, key, emoji },
+        "reactions",
+      );
+      setReactions(reply.reactions);
+    } catch (error) {
+      setReactions(previous);
+      setSendError(`Reaction not saved: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  };
 
   const download = async (path: string): Promise<void> => {
     setSendError(null);
@@ -120,12 +161,7 @@ export default function ChatPane({ client, bot, canWrite }: ChatPaneProps): Reac
     const prompt = promptWithAttachments(text, paths);
     // Back-dated a little so a transcript clock a few seconds behind still counts.
     setPending({ kind: "user", at: new Date(Date.now() - 5000).toISOString(), text: prompt });
-    // Bracketed paste keeps a multi-line prompt as one message; the Enter
-    // after it is what submits, exactly as when the owner types it.
-    client.fire({ type: "input", bot_id: botId, data: `\u001b[200~${prompt}\u001b[201~` });
-    window.setTimeout(() => {
-      client.fire({ type: "input", bot_id: botId, data: "\r" });
-    }, 120);
+    sendPrompt(client, botId, prompt);
     for (const delay of [1000, 3000]) {
       window.setTimeout(() => {
         reloadRef.current?.();
@@ -148,7 +184,20 @@ export default function ChatPane({ client, bot, canWrite }: ChatPaneProps): Reac
                 {needsTimeGap(previous?.at, item.at) ? (
                   <div className="chat-time">{dayLabel(item.at)}</div>
                 ) : null}
-                <ChatItemView item={item} botName={bot.name} onDownload={download} />
+                <ChatItemView
+                  item={item}
+                  botName={bot.name}
+                  bot={bot}
+                  onDownload={download}
+                  reaction={reactions[item.at]}
+                  onReact={
+                    item.kind === "bot" && canWrite
+                      ? (emoji) => {
+                          void react(item.at, emoji);
+                        }
+                      : undefined
+                  }
+                />
               </div>
             );
           })}

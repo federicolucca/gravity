@@ -3,6 +3,7 @@ import { byRecency } from "./recency";
 import type { ReactElement } from "react";
 import type { Bot, Project } from "../../protocol/entities";
 import BotRow from "./BotRow";
+import GroupRow from "./GroupRow";
 import { MoreIcon } from "./icons";
 import PinnedBots from "./PinnedBots";
 import type { SidebarTreeProps } from "./tree";
@@ -28,6 +29,13 @@ export default function ProjectSection(props: ProjectSectionProps): ReactElement
     onCreateBot: () => {
       props.onCreateBot(project.id);
     },
+    onNewGroup:
+      bots.length >= 2
+        ? () => {
+            props.onNewGroup(project.id);
+          }
+        : undefined,
+    onOpenMachine: props.onOpenMachine,
     onDelete: () => {
       void props.onDeleteProject(project.id);
     },
@@ -113,6 +121,19 @@ export default function ProjectSection(props: ProjectSectionProps): ReactElement
               }}
             />
           ))}
+          {props.groups
+            .filter((group) => group.project_id === project.id)
+            .map((group) => (
+              <GroupRow
+                key={group.id}
+                group={group}
+                members={bots.filter((bot) => group.bot_ids.includes(bot.id))}
+                selected={selection.kind === "group" && selection.groupId === group.id}
+                onClick={() => {
+                  onSelect({ kind: "group", groupId: group.id });
+                }}
+              />
+            ))}
           {bots.length === 0 ? <div className="muted project-empty">No bots yet.</div> : null}
         </>
       )}

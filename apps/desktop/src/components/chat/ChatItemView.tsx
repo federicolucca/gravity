@@ -1,15 +1,23 @@
-import { ArrowDownLeft, ArrowUpRight, ChevronRight, Paperclip } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, ChevronRight, Paperclip, User } from "lucide-react";
 import { useState } from "react";
 import type { ReactElement } from "react";
-import type { ChatItem } from "../../protocol/entities";
+import type { Bot, ChatItem } from "../../protocol/entities";
+import BotAvatar from "../BotAvatar";
 import Markdown from "../control/Markdown";
 import FileDownloads from "./FileDownloads";
+import Reaction from "./Reaction";
 import { baseName, splitAttachments } from "./uploads";
 
 interface ChatItemViewProps {
   readonly item: ChatItem;
   readonly botName: string;
+  /** Who wrote a bot reply, for the small avatar beside it. */
+  readonly bot?: Pick<Bot, "id" | "name" | "avatar">;
   readonly onDownload: (path: string) => Promise<void>;
+  /** The owner's emoji on this reply; only bot replies take one. */
+  readonly reaction?: string;
+  /** Absent where reactions are not offered. */
+  readonly onReact?: (emoji: string | null) => void;
 }
 
 function plural(count: number, word: string): string {
@@ -78,18 +86,23 @@ function BusNote({ item }: { readonly item: ChatItem }): ReactElement {
 function UserMessage({ text }: { readonly text: string }): ReactElement {
   const { body, files } = splitAttachments(text);
   return (
-    <div className="chat-row chat-row-user chat-row-stack">
-      {files.length > 0 ? (
-        <ul className="chat-files">
-          {files.map((path) => (
-            <li key={path} className="chat-file" title={path}>
-              <Paperclip size={13} strokeWidth={2} aria-hidden="true" />
-              <span>{baseName(path)}</span>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-      {body !== "" ? <div className="chat-bubble chat-bubble-user">{body}</div> : null}
+    <div className="chat-line chat-line-user">
+      <div className="chat-row chat-row-user chat-row-stack">
+        {files.length > 0 ? (
+          <ul className="chat-files">
+            {files.map((path) => (
+              <li key={path} className="chat-file" title={path}>
+                <Paperclip size={13} strokeWidth={2} aria-hidden="true" />
+                <span>{baseName(path)}</span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        {body !== "" ? <div className="chat-bubble chat-bubble-user">{body}</div> : null}
+      </div>
+      <span className="chat-avatar chat-avatar-me" aria-hidden="true">
+        <User size={13} strokeWidth={2.25} />
+      </span>
     </div>
   );
 }
@@ -97,7 +110,10 @@ function UserMessage({ text }: { readonly text: string }): ReactElement {
 export default function ChatItemView({
   item,
   botName,
+  bot,
   onDownload,
+  reaction,
+  onReact,
 }: ChatItemViewProps): ReactElement {
   switch (item.kind) {
     case "steps":
@@ -109,11 +125,19 @@ export default function ChatItemView({
       return <UserMessage text={item.text ?? ""} />;
     case "bot":
       return (
-        <div className="chat-row chat-row-bot chat-row-stack-bot" aria-label={`${botName} said`}>
-          <div className="chat-bubble chat-bubble-bot">
-            <Markdown>{item.text ?? ""}</Markdown>
+        <div className="chat-line">
+          {bot === undefined ? null : (
+            <span className="chat-avatar" aria-hidden="true">
+              <BotAvatar avatar={bot.avatar} name={bot.name} id={bot.id} size="sm" />
+            </span>
+          )}
+          <div className="chat-row chat-row-bot chat-row-stack-bot" aria-label={`${botName} said`}>
+            <div className="chat-bubble chat-bubble-bot">
+              <Markdown>{item.text ?? ""}</Markdown>
+            </div>
+            <FileDownloads text={item.text ?? ""} onDownload={onDownload} />
+            {onReact === undefined ? null : <Reaction emoji={reaction} onReact={onReact} />}
           </div>
-          <FileDownloads text={item.text ?? ""} onDownload={onDownload} />
         </div>
       );
   }

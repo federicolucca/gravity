@@ -88,6 +88,26 @@ export type ClientRequestBody =
     }
   | { readonly type: "list_bot_activity"; readonly project_id?: string }
   | { readonly type: "list_bot_actions"; readonly project_id?: string }
+  | { readonly type: "list_groups"; readonly project_id?: string }
+  | { readonly type: "machine_stats" }
+  | { readonly type: "list_reactions"; readonly bot_id: string }
+  | {
+      readonly type: "set_reaction";
+      readonly bot_id: string;
+      /** The reply's transcript timestamp. */
+      readonly key: string;
+      /** Absent clears the reaction. */
+      readonly emoji?: string;
+    }
+  | {
+      readonly type: "save_group";
+      /** Absent creates a group. */
+      readonly group_id?: string;
+      readonly name: string;
+      readonly project_id: string;
+      readonly bot_ids: readonly string[];
+    }
+  | { readonly type: "delete_group"; readonly group_id: string }
   | {
       readonly type: "download_file";
       readonly bot_id: string;

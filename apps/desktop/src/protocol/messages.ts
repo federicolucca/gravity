@@ -4,6 +4,8 @@ import type { Decision, DecisionComment, PendingCounts, PublishResult, Tag } fro
 import type {
   Bot,
   BotActivity,
+  BotGroup,
+  MachineStats,
   ChatItem,
   BotRevision,
   BotState,
@@ -76,6 +78,15 @@ export type ServerReply =
       readonly size: number;
       readonly done: boolean;
     })
+  | (ReplyBase & {
+      readonly type: "reactions";
+      /** Reply timestamp to the owner's emoji. */
+      readonly reactions: Readonly<Record<string, string>>;
+    })
+  | (ReplyBase & { readonly type: "machine_stats"; readonly stats: MachineStats })
+  | (ReplyBase & { readonly type: "groups"; readonly groups: readonly BotGroup[] })
+  | (ReplyBase & { readonly type: "group_saved"; readonly group: BotGroup })
+  | (ReplyBase & { readonly type: "group_deleted"; readonly group_id: string })
   | (ReplyBase & {
       readonly type: "uploaded";
       readonly file: string;

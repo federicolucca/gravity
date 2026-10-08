@@ -1,0 +1,164 @@
+/* The machine panel: a modern glances for the daemon's host. */
+
+.overlay-panel:has(.machine-panel) {
+  width: 980px;
+  max-height: 88vh;
+}
+
+.machine-panel {
+  padding: 16px 18px 20px;
+  overflow-y: auto;
+}
+
+.machine-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.machine-head h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.machine-head p,
+.machine-sub {
+  margin: 4px 0 0;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.machine-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.machine-card {
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+}
+
+.machine-card header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  color: var(--text-dim);
+}
+
+.machine-card h3 {
+  flex: 1;
+  margin: 0;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.machine-card strong {
+  color: var(--text);
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+.meter {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--text-faint) 22%, transparent);
+}
+
+.meter span {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.6s ease;
+}
+
+.meter-ok span,
+.core-ok span {
+  background: #22a06b;
+}
+
+.meter-warn span,
+.core-warn span {
+  background: #e2a03f;
+}
+
+.meter-hot span,
+.core-hot span {
+  background: #e5484d;
+}
+
+.machine-cores {
+  display: flex;
+  gap: 3px;
+  height: 36px;
+  margin-top: 10px;
+}
+
+.core {
+  display: flex;
+  flex: 1;
+  align-items: flex-end;
+  overflow: hidden;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--text-faint) 18%, transparent);
+}
+
+.core span {
+  width: 100%;
+  transition: height 0.6s ease;
+}
+
+.machine-row + .machine-row {
+  margin-top: 10px;
+}
+
+.machine-row-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+
+.machine-row-head span:last-child {
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.temp-warn {
+  color: #b7791f !important;
+}
+
+.temp-hot {
+  color: #e5484d !important;
+}
+
+.machine-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.machine-table td {
+  padding: 3px 0;
+}
+
+.machine-table td:first-child {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.machine-table td + td {
+  color: var(--text-dim);
+  text-align: right;
+}

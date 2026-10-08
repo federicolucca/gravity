@@ -2,6 +2,7 @@
 export type Selection =
   | { readonly kind: "none" }
   | { readonly kind: "bot"; readonly botId: string }
+  | { readonly kind: "group"; readonly groupId: string }
   | { readonly kind: "project"; readonly projectId: string }
   /**
    * The Control center. `decisionId` opens straight onto one record, which is

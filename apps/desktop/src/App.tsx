@@ -3,6 +3,7 @@ import { useCallback, useMemo, useState } from "react";
 import type { ReactElement } from "react";
 import { useDaemonActions } from "./app/useDaemonActions";
 import { useFirstRunSetup } from "./app/useFirstRunSetup";
+import { useGroups } from "./app/useGroups";
 import type { FirstRunSetup } from "./app/useFirstRunSetup";
 import { useBotActions } from "./app/useBotActions";
 import { useDaemonState } from "./app/useDaemonState";
@@ -16,6 +17,7 @@ import { useToasts } from "./app/useToasts";
 import type { AddToast } from "./app/useToasts";
 import { useUpdates } from "./app/useUpdates";
 import CommandPalette from "./components/CommandPalette";
+import MachinePanel from "./components/machine/MachinePanel";
 import MainPane from "./components/MainPane";
 import SearchOverlay from "./components/SearchOverlay";
 import SettingsOverlay from "./components/settings/SettingsOverlay";
@@ -93,6 +95,14 @@ export default function App(): ReactElement {
   const overlays = useOverlays();
   const { select, bots, canControl, connected } = daemon;
   const actionByBot = useBotActions(client, bots);
+  const groups = useGroups(client, connected, bots, select, addToast);
+  const [machineOpen, setMachineOpen] = useState(false);
+  const openMachine = useCallback((): void => {
+    setMachineOpen(true);
+  }, []);
+  const closeMachine = useCallback((): void => {
+    setMachineOpen(false);
+  }, []);
 
   useUpdates(addToast, daemon.status, daemon.endpoint);
 
@@ -151,6 +161,9 @@ export default function App(): ReactElement {
           nextRun={daemon.nextRun}
           activityByBot={daemon.activityByBot}
           actionByBot={actionByBot}
+          groups={groups.groups}
+          onNewGroup={groups.openNew}
+          onOpenMachine={openMachine}
           pendingDecisions={pending}
           selection={daemon.selection}
           canControl={canControl}
@@ -184,8 +197,11 @@ export default function App(): ReactElement {
             onRenameProject={actions.renameProject}
             onSetProjectLead={actions.setProjectLead}
             onDeleteProject={actions.deleteProject}
+            groups={groups}
           />
         </main>
+        {groups.dialog}
+        {machineOpen ? <MachinePanel client={client} onClose={closeMachine} /> : null}
         {overlays.paletteOpen ? (
           <CommandPalette
             actions={paletteActions}

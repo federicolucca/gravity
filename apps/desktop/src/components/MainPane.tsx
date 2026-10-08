@@ -6,6 +6,8 @@ import quietArt from "../assets/empty/quiet.png";
 import type { DaemonApi } from "../protocol/api";
 import { connectionStatusLabel } from "../protocol/connection";
 import BotView from "./BotView";
+import GroupView from "./groups/GroupView";
+import type { GroupsApi } from "../app/useGroups";
 import ControlCenterView from "./control/ControlCenterView";
 import ProjectView from "./ProjectView";
 import NewProjectForm from "./sidebar/NewProjectForm";
@@ -18,6 +20,7 @@ interface MainPaneProps {
   readonly onRenameProject: (projectId: string, name: string) => Promise<void>;
   readonly onSetProjectLead: (projectId: string, botId: string | null) => Promise<void>;
   readonly onDeleteProject: (projectId: string) => Promise<void>;
+  readonly groups: GroupsApi;
 }
 
 interface EmptyStateProps {
@@ -96,6 +99,23 @@ export default function MainPane(props: MainPaneProps): ReactElement {
         onRename={props.onRenameProject}
         onSetLead={props.onSetProjectLead}
         onDelete={props.onDeleteProject}
+      />
+    );
+  }
+
+  if (selection.kind === "group") {
+    const group = props.groups.groups.find((item) => item.id === selection.groupId);
+    return group === undefined ? (
+      <EmptyState daemon={daemon} onCreateProject={props.onCreateProject} />
+    ) : (
+      <GroupView
+        key={group.id}
+        client={client}
+        group={group}
+        bots={bots}
+        canControl={canControl}
+        onEdit={props.groups.openEdit}
+        onDelete={props.groups.remove}
       />
     );
   }

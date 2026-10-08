@@ -15,6 +15,9 @@ interface ProjectMenuOptions {
    * still one click away from a new bot.
    */
   readonly onCreateBot: () => void;
+  /** Opens the new-group dialog; absent while the project has fewer than two bots. */
+  readonly onNewGroup?: () => void;
+  readonly onOpenMachine: () => void;
   readonly onDelete: () => void;
 }
 
@@ -29,12 +32,18 @@ export function useProjectMenu({
   canControl,
   onOpenSettings,
   onCreateBot,
+  onNewGroup,
+  onOpenMachine,
   onDelete,
 }: ProjectMenuOptions): RowMenuApi {
   return useRowMenu({
     items: [
       ...(canControl ? [{ label: "New Bot", onSelect: onCreateBot }] : []),
+      ...(canControl && onNewGroup !== undefined
+        ? [{ label: "New group chat", onSelect: onNewGroup }]
+        : []),
       { label: "Project settings", onSelect: onOpenSettings },
+      { label: "Machine", onSelect: onOpenMachine },
       {
         label: "Open folder",
         onSelect: () => {

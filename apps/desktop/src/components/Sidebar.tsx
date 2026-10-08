@@ -105,6 +105,9 @@ export default function Sidebar(props: SidebarProps): ReactElement {
             pinnedBotIds={pinnedBotIds}
             activityByBot={props.activityByBot}
             actionByBot={props.actionByBot}
+            groups={props.groups}
+            onNewGroup={props.onNewGroup}
+            onOpenMachine={props.onOpenMachine}
             selection={selection}
             canControl={canControl}
             onSelect={onSelect}

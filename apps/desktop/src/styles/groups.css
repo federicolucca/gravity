@@ -1,0 +1,88 @@
+/* Group chats: sidebar rows, the merged thread and the members dialog. */
+
+.group-row {
+  gap: 10px;
+}
+
+.group-row-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--bg-hover, rgba(127, 127, 127, 0.12));
+  color: var(--text-dim);
+}
+
+.group-row-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  text-align: left;
+}
+
+.group-members {
+  display: flex;
+  gap: 4px;
+  margin: 0 0 0 10px;
+  padding: 0;
+  list-style: none;
+}
+
+.chat-speaker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 10px 0 2px 38px;
+  color: var(--text-dim);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.chat-working-list {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.group-dialog {
+  width: min(420px, calc(100vw - 32px));
+}
+
+.group-dialog-label {
+  display: block;
+  margin: 12px 0 4px;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.group-dialog-name {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
+.group-dialog-members {
+  max-height: 260px;
+  margin: 0 0 14px;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.group-dialog-members label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 2px;
+  cursor: pointer;
+}

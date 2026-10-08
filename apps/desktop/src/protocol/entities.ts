@@ -65,6 +65,54 @@ interface ChatStep {
  * One item of a bot's conversation as a chat, read from its transcript:
  * an owner prompt, a bot reply, bus traffic, or a folded run of tool calls.
  */
+/** Live stats of the daemon's machine (`machine_stats`). Bytes, percents, °C. */
+export interface MachineStats {
+  readonly hostname: string;
+  readonly os: string;
+  readonly kernel: string;
+  readonly uptime_secs: number;
+  readonly cpu_model: string;
+  readonly cpu: number;
+  readonly cores: readonly number[];
+  readonly load: readonly number[];
+  readonly memory: { readonly total: number; readonly available: number };
+  readonly swap: { readonly total: number; readonly free: number };
+  readonly disks: readonly {
+    readonly mount: string;
+    readonly device: string;
+    readonly fs: string;
+    readonly total: number;
+    readonly free: number;
+  }[];
+  readonly temperatures: readonly {
+    readonly chip: string;
+    readonly max: number;
+    readonly readings: readonly { readonly label: string; readonly celsius: number }[];
+  }[];
+  readonly network: readonly {
+    readonly iface: string;
+    readonly rx_rate: number;
+    readonly tx_rate: number;
+    readonly rx_total: number;
+    readonly tx_total: number;
+  }[];
+  readonly processes: readonly {
+    readonly pid: number;
+    readonly name: string;
+    readonly cpu: number;
+    readonly rss: number;
+  }[];
+}
+
+/** A group chat: bots of one project the owner talks to in one thread. */
+export interface BotGroup {
+  readonly id: string;
+  readonly name: string;
+  readonly project_id: string;
+  readonly bot_ids: readonly string[];
+  readonly created_at: string;
+}
+
 export interface ChatItem {
   readonly kind: "user" | "bot" | "bus_in" | "bus_out" | "steps";
   readonly at: string;
