@@ -9,6 +9,19 @@ use super::Conn;
 
 impl Conn {
     /// `machine_stats {}` → `{type:"machine_stats", stats}`.
+    /// `prepare_restart {minutes}` → `{draining}`: holds new work back so busy
+    /// bots can finish before the daemon restarts; 0 minutes ends the drain.
+    pub(super) fn prepare_restart(&self, req_id: &Value, req: &Value) -> anyhow::Result<()> {
+        let minutes = req.get("minutes").and_then(Value::as_u64).unwrap_or(10);
+        crate::drain::start(minutes);
+        self.send(json!({
+            "type": "restart_prepared",
+            "req_id": req_id,
+            "draining": crate::drain::active(),
+        }));
+        Ok(())
+    }
+
     pub(super) fn machine_stats(&self, req_id: &Value, _req: &Value) -> anyhow::Result<()> {
         let out = self.out.clone();
         let req_id = req_id.clone();

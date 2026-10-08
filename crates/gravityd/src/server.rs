@@ -228,6 +228,7 @@ pub async fn serve(
         tracing::info!(signal, "gravityd stopping");
         Stop::Signal
     };
+    crate::drain::record_interrupted(&app);
     let _ = stop_tx.send(());
 
     for h in handles {

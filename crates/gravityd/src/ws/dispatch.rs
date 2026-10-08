@@ -95,6 +95,7 @@ impl Conn {
             "upload_file" => self.upload_file(&req_id, req),
             "download_file" => self.download_file(&req_id, req),
             "list_groups" => self.list_groups(&req_id, req),
+            "prepare_restart" => self.prepare_restart(&req_id, req),
             "list_folders" => self.list_folders(&req_id, req),
             "save_folder" => self.save_folder(&req_id, req),
             "delete_folder" => self.delete_folder(&req_id, req),

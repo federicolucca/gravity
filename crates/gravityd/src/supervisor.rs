@@ -283,6 +283,11 @@ impl Supervisor {
     /// message is read between tool calls or starts a new turn when the
     /// session is idle; it never touches the terminal.
     pub fn deliver(&self, bot_id: &str, text: &str) -> Result<(), DeliverError> {
+        if crate::drain::active() {
+            return Err(DeliverError::NotReady(
+                "the daemon is about to restart".to_string(),
+            ));
+        }
         let (session, socket) = {
             let bots = self.lock_bots();
             let Some(h) = bots.get(bot_id) else {

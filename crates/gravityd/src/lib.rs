@@ -12,6 +12,7 @@ pub mod config;
 pub mod db;
 pub mod decisions;
 pub mod delivery;
+pub mod drain;
 pub mod events;
 pub mod home;
 pub mod mcp;

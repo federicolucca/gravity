@@ -422,9 +422,13 @@ pub async fn watch(app: Arc<AppState>) {
     tick.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
     loop {
         tick.tick().await;
+        if crate::drain::active() {
+            continue;
+        }
         let app = app.clone();
         let mut counts = std::mem::take(&mut idle);
         let result = tokio::task::spawn_blocking(move || {
+            crate::drain::resume_ready(&app);
             let boards = load(&app.cfg.home);
             let mut bots: Vec<&str> = boards.tasks.iter().map(|t| t.bot_id.as_str()).collect();
             bots.sort_unstable();
